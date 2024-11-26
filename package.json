@@ -1,5 +1,5 @@
 {
-  "name": "T/E Tech - i18n",
+  "name": "@tesd-tech/ps-i18n",
   "version": "24.11.02",
   "description": "Translate MessageKeys into multiple languages using Google Translate",
   "main": "index.js",
