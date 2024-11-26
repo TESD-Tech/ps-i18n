@@ -1,6 +1,6 @@
 {
   "name": "T/E Tech - i18n",
-  "version": "24.11.01",
+  "version": "24.11.02",
   "description": "Translate MessageKeys into multiple languages using Google Translate",
   "main": "index.js",
   "type": "module",
@@ -11,7 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
-    "@tesd-tech/ps-package": "^24.11.1",
+    "@tesd-tech/ps-package": "^24.11.9",
     "archiver": "^7.0.1",
     "cli-progress": "^3.12.0",
     "cli-table3": "^0.6.5",

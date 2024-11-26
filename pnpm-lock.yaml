@@ -12,8 +12,8 @@ importers:
         specifier: ^0.21.0
         version: 0.21.0
       '@tesd-tech/ps-package':
-        specifier: ^24.11.1
-        version: 24.11.1
+        specifier: ^24.11.9
+        version: 24.11.9
       archiver:
         specifier: ^7.0.1
         version: 7.0.1
@@ -60,8 +60,8 @@ packages:
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
 
-  '@tesd-tech/ps-package@24.11.1':
-    resolution: {integrity: sha512-Anj/Ke0qv63LH4+JKJu2YhOGD148XkN2Cya3mBCCqY+dl1C/5HU501nxiV7pJoV0Hxu0Q6lhxI6AcjrAzL6IrA==}
+  '@tesd-tech/ps-package@24.11.9':
+    resolution: {integrity: sha512-YuMmOOuNV2U71N+vXBFHVvbbU/EbATd/dzy4pLB6+eOgSxhFKCka+v06KNIYDrjI1NQbODWnh8Far3WoBIjkhA==}
     hasBin: true
 
   '@types/keyv@3.1.4':
@@ -551,7 +551,7 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@tesd-tech/ps-package@24.11.1':
+  '@tesd-tech/ps-package@24.11.9':
     dependencies:
       archiver: 7.0.1
       calver: 24.1.0
