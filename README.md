@@ -19,7 +19,7 @@ TE Tech - i18n is an open-source tool for translating PowerSchool MessageKeys in
 2. **Install Node.js**: If you haven't already, download and install Node.js from the [official website](https://nodejs.org/).
 3. **Clone the Repository**: Use Git to clone the project repository:
    ```bash
-   git clone https://github.com/yourusername/TE-Tech-i18n.git
+   git clone https://github.com/TESD-Tech/ps-i18n.git
    ```
 4. **Navigate to the Project Directory**: 
    ```bash
