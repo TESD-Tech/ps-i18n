@@ -1,0 +1,25 @@
+{
+  "name": "T/E Tech - i18n",
+  "version": "24.11.01",
+  "description": "Translate MessageKeys into multiple languages using Google Translate",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Benjamin Kemp, TESD",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@tesd-tech/ps-package": "^24.11.1",
+    "archiver": "^7.0.1",
+    "cli-progress": "^3.12.0",
+    "cli-table3": "^0.6.5",
+    "dotenv": "^16.4.5",
+    "google-translate-api": "^2.3.0",
+    "node-fetch": "^3.3.2",
+    "p-limit": "^6.1.0",
+    "properties-reader": "^2.3.0",
+    "xml2js": "^0.6.2"
+  }
+}
