@@ -1,12 +1,11 @@
 import { Command } from 'commander';
 import { processFile, languages } from './src/translator.js';
-import { main as i18nMain } from './src/i18n-ize.js';
 import config from './translation.config.js';
 import fs from 'fs';
 import path from 'path';
 
 // Define constants for directory path and source locale
-let directoryPath = './src/PowerSchool/MessageKeys';
+let directoryPath = './src/powerschool/MessageKeys';
 const fallbackFilePath = 'src/config/US_en_example/';
 const sourceLocale = 'US_en'; // Default source locale
 
