@@ -55,7 +55,7 @@ This command will start translating your MessageKeys into the specified language
 ### i18n Process
 To run the i18n process, use:
 ```bash
-npx ps-i18n i18n <sourceFile> <locale>
+npx ps-i18n <file_to_convert_to_MessageKeys> <locale>
 ```
 - `<sourceFile>`: The path to the source file to be processed.
 - `<locale>`: The locale for which the file should be processed.
