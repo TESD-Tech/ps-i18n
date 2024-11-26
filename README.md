@@ -59,4 +59,4 @@ TE Tech - i18n is an open-source tool for translating PowerSchool MessageKeys in
 - **Debug Mode**: Gives more detailed logs to help fix issues.
 
 ## Support
-For help, contact Benjamin Kemp at kempb@tesd.net or check the tool's documentation.
+For help, please enter an issue here: https://github.com/TESD-Tech/ps-i18n/issues
