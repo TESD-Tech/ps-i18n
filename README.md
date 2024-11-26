@@ -41,18 +41,38 @@ TE Tech - i18n is an open-source tool for translating PowerSchool MessageKeys in
    npx ps-package
    ```
 
-## Usage 🚀
+## CLI Usage
+
+You can run the tool using the following commands:
+
+### Translation Process
+To run the translation process, use:
+```bash
+npx ps-i18n translate
+```
+This command will start translating your MessageKeys into the specified languages.
+
+### i18n Process
+To run the i18n process, use:
+```bash
+npx ps-i18n i18n <sourceFile> <locale>
+```
+- `<sourceFile>`: The path to the source file to be processed.
+- `<locale>`: The locale for which the file should be processed.
+
+This command will execute the i18n process as defined in the `i18n-ize.js` script, using the specified source file and locale.
+
+## Usage 
 1. **Run the Translation Tool**: To start translating your MessageKeys, use the following command:
    ```bash
    node index.js
    ```
-   This will process the files and translate them into the specified languages. 🌐
-
+   This will process the files and translate them into the specified languages. 
 2. **Package Translated Files**: After translation, package the files into a PowerSchool plugin zip archive using:
    ```bash
    npx ps-package
    ```
-   Your translations are now neatly packaged and ready to go! 📦
+   Your translations are now neatly packaged and ready to go! 
 
 ## Configuration
 - **Testing Mode**: Only translates one line per language to test.

@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
@@ -35,8 +37,8 @@ async function writeFile(filePath, content) {
     }
 }
 
-function generateHeader(name, version, sourceFileName) {
-    return `# ${name} - Version: ${version}\n# MessageKeys for: ${sourceFileName}\n`;
+function generateHeader(name, version, sourceFileName, locale) {
+    return `# ${name} - Version: ${version}\n# MessageKeys for: ${sourceFileName} (${locale})\n`;
 }
 
 async function extractMessages(content, sourceFile) {
@@ -185,7 +187,7 @@ async function handleConsolidationPrompt() {
     });
 }
 
-async function processFile(sourceFile) {
+async function processFile(sourceFile, locale) {
     try {
         const { name, version } = await getPluginDetails();
         let data = await readFile(sourceFile);
@@ -202,11 +204,10 @@ async function processFile(sourceFile) {
             messages = await consolidateMessages(messages, sourceFile);
         }
 
-        const outputDirectory = 'src/powerschool/MessageKeys';
         const sourceFileName = path.basename(sourceFile, path.extname(sourceFile));
-        const destinationFile = `${outputDirectory}/tet_${sourceFileName}.US_en.properties`;
+        const destinationFile = `${locale}/${sourceFileName}.properties`;
 
-        const headerComments = generateHeader(name, version, sourceFileName);
+        const headerComments = generateHeader(name, version, sourceFileName, locale);
         const fileContent = `${headerComments}\n${Object.entries(messages).map(([key, value]) => `${key}=${value}`).join('\n')}`;
 
         await writeFile(destinationFile, fileContent);
@@ -224,14 +225,15 @@ async function processFile(sourceFile) {
 (async () => {
     const args = process.argv.slice(2);
     const sourceFile = args[0];
+    const locale = args[1];
 
-    if (!sourceFile) {
-        console.error('Please provide a source file.');
+    if (!sourceFile || !locale) {
+        console.error('Please provide both a source file and a locale.');
         process.exit(1);
     }
 
     try {
-        await processFile(sourceFile);
+        await processFile(sourceFile, locale);
     } catch (err) {
         console.error('Error processing the files:', err);
     }
