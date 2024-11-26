@@ -209,8 +209,20 @@ async function processFile(sourceFile, locale) {
         await fs.promises.mkdir(destinationDir, { recursive: true });
         const destinationFile = path.join(destinationDir, `${sourceFileName}.${locale}.properties`);
 
+        let existingContent = '';
+        if (fs.existsSync(destinationFile)) {
+            existingContent = await readFile(destinationFile);
+        }
+
+        const existingMessages = existingContent.split('\n').reduce((acc, line) => {
+            const [key, value] = line.split('=');
+            if (key && value) acc[key.trim()] = value.trim();
+            return acc;
+        }, {});
+
+        const mergedMessages = { ...existingMessages, ...messages };
         const headerComments = generateHeader(name, version, sourceFileName, locale);
-        const fileContent = `${headerComments}\n${Object.entries(messages).map(([key, value]) => `${key}=${value}`).join('\n')}`;
+        const fileContent = `${headerComments}\n${Object.entries(mergedMessages).map(([key, value]) => `${key}=${value}`).join('\n')}`;
 
         await writeFile(destinationFile, fileContent);
         console.log('File updated successfully at', destinationFile);
