@@ -1,6 +1,5 @@
 {
   "name": "@tesd-tech/ps-i18n",
-  "version": "24.11.02",
   "description": "Translate MessageKeys into multiple languages using Google Translate",
   "main": "index.js",
   "type": "module",
@@ -25,5 +24,7 @@
     "p-limit": "^6.1.0",
     "properties-reader": "^2.3.0",
     "xml2js": "^0.6.2"
-  }
+  },
+    "version": "24.11.02",
+  "devDependencies": {}
 }
