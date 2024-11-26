@@ -205,7 +205,9 @@ async function processFile(sourceFile, locale) {
         }
 
         const sourceFileName = path.basename(sourceFile, path.extname(sourceFile));
-        const destinationFile = `${locale}/${sourceFileName}.properties`;
+        const destinationDir = path.join('src', 'powerschool', 'MessageKeys');
+        await fs.promises.mkdir(destinationDir, { recursive: true });
+        const destinationFile = path.join(destinationDir, `${sourceFileName}.properties`);
 
         const headerComments = generateHeader(name, version, sourceFileName, locale);
         const fileContent = `${headerComments}\n${Object.entries(messages).map(([key, value]) => `${key}=${value}`).join('\n')}`;
