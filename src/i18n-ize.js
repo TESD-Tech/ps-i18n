@@ -5,6 +5,8 @@ import path from 'path';
 import readline from 'readline';
 import { DOMParser } from 'xmldom';
 
+let rl;
+
 async function getPluginDetails() {
     try {
         const xmlData = await fs.promises.readFile('plugin.xml', 'utf8');
@@ -73,14 +75,15 @@ async function handleDuplicateKeys(messages, content, sourceFile) {
 
     console.log('Duplicate keys found:', duplicateKeys);
 
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
+    if (!rl) {
+        rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+    }
 
     return new Promise((resolve) => {
         rl.question('Do you want to re-index the file? (yes/no): ', (answer) => {
-            rl.close();
             if (answer.toLowerCase() === 'yes') {
                 reindexKeys(content, sourceFile, messages).then(() => {
                     resolve(true);
@@ -195,13 +198,14 @@ async function processFile(sourceFile, locale) {
         const proceedWithoutConfirmation = process.argv.includes('-Y');
 
         if (!proceedWithoutConfirmation) {
-            const rl = readline.createInterface({
-                input: process.stdin,
-                output: process.stdout
-            });
+            if (!rl) {
+                rl = readline.createInterface({
+                    input: process.stdin,
+                    output: process.stdout
+                });
+            }
             await new Promise((resolve) => {
                 rl.question('Warning: This operation will modify both the source and destination files. Type "Yes" to proceed: ', (answer) => {
-                    rl.close();
                     if (answer.toLowerCase() !== 'yes') {
                         console.log('Operation cancelled by user.');
                         process.exit(0);
@@ -271,6 +275,12 @@ function displayHelp() {
                 `  -Y           Skip confirmation prompt and proceed with file changes
 `);
 }
+
+process.on('exit', () => {
+    if (rl) {
+        rl.close();
+    }
+});
 
 (async () => {
     const args = process.argv.slice(2);

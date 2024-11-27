@@ -81,7 +81,8 @@ async function translate(options) {
     .description('Create message keys from a source HTML file')
     .action(async (sourceFile, locale) => {
       setDebug(program.opts().debug);
-      await createKeys(sourceFile, locale);
+      const skipPrompt = program.opts().yes;
+      await createKeys(sourceFile, locale, skipPrompt);
     });
 
   program
