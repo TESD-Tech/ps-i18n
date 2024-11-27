@@ -4,10 +4,11 @@
   "main": "index.js",
   "type": "module",
   "bin": {
-    "ps-i18n": "src/i18n-ize.js"
+    "create-keys": "src/i18n-ize.js",
+    "translate": "index.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "i18n": "node src/i18n-ize.js"
   },
   "author": "Benjamin Kemp, TESD",

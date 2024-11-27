@@ -62,6 +62,32 @@ npx ps-i18n <file_to_convert_to_MessageKeys> <locale>
 
 This command will execute the i18n process as defined in the `i18n-ize.js` script, using the specified source file and locale.
 
+### create-keys
+This command processes a source file to create or update corresponding message keys in a `.properties` file for the specified locale.
+
+#### Usage
+
+```bash
+create-keys <sourceFile> <locale> [options]
+```
+
+#### Arguments
+
+- `<sourceFile>`: Path to the source file to be processed.
+- `<locale>`: Locale for which the file should be processed.
+
+#### Options
+
+- `-Y`: Skip the confirmation prompt and proceed with file changes.
+
+#### Example
+
+```bash
+create-keys src/powerschool/test.html US_en -Y
+```
+
+This will process the `test.html` file for the `US_en` locale, creating backups and updating the necessary files without requiring user confirmation.
+
 ## Usage 
 1. **Run the Translation Tool**: To start translating your MessageKeys, use the following command:
    ```bash

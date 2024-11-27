@@ -209,35 +209,94 @@ async function processFile(sourceFile, locale) {
         await fs.promises.mkdir(destinationDir, { recursive: true });
         const destinationFile = path.join(destinationDir, `${sourceFileName}.${locale}.properties`);
 
-        let existingContent = '';
-        if (fs.existsSync(destinationFile)) {
-            existingContent = await readFile(destinationFile);
+        const proceedWithoutConfirmation = process.argv.includes('-Y');
+
+        if (!proceedWithoutConfirmation) {
+            const rl = readline.createInterface({
+                input: process.stdin,
+                output: process.stdout
+            });
+            rl.question('Warning: This operation will modify both the source and destination files. Type "Yes" to proceed: ', async (answer) => {
+                rl.close();
+                if (answer.toLowerCase() !== 'yes') {
+                    console.log('Operation cancelled by user.');
+                    process.exit(0);
+                }
+                await backupFiles(sourceFile, destinationFile);
+                const data = await readFile(sourceFile);
+                await continueProcessing(name, version, sourceFileName, locale, destinationFile, messages, data);
+            });
+        } else {
+            await backupFiles(sourceFile, destinationFile);
+            const data = await readFile(sourceFile);
+            await continueProcessing(name, version, sourceFileName, locale, destinationFile, messages, data);
         }
-
-        const existingMessages = existingContent.split('\n').reduce((acc, line) => {
-            const [key, value] = line.split('=');
-            if (key && value) acc[key.trim()] = value.trim();
-            return acc;
-        }, {});
-
-        const mergedMessages = { ...existingMessages, ...messages };
-        const headerComments = generateHeader(name, version, sourceFileName, locale);
-        const fileContent = `${headerComments}\n${Object.entries(mergedMessages).map(([key, value]) => `${key}=${value}`).join('\n')}`;
-
-        await writeFile(destinationFile, fileContent);
-        console.log('File updated successfully at', destinationFile);
-
-        // Convert msg tags to PSHTML text tags
-        const updatedData = data.replace(/\[msg:(.*?)\](.*?)\[\/msg\]/g, '~[text:$1]');
-        await writeFile(sourceFile, updatedData);
-        console.log('Source file updated with PSHTML text tags:', sourceFile);
     } catch (error) {
         console.error('Error processing the file:', error);
     }
 }
 
+async function backupFiles(sourceFile, destinationFile) {
+    const backupDir = 'original_files_backup';
+    fs.promises.mkdir(backupDir, { recursive: true });
+    const sourceBackup = path.join(backupDir, path.basename(sourceFile));
+    const destBackup = path.join(backupDir, path.basename(destinationFile));
+    fs.promises.copyFile(sourceFile, sourceBackup);
+    if (fs.existsSync(destinationFile)) {
+        fs.promises.copyFile(destinationFile, destBackup);
+    }
+    console.log('Backup created for source and destination files.');
+}
+
+async function continueProcessing(name, version, sourceFileName, locale, destinationFile, messages, data) {
+    let existingContent = '';
+    if (fs.existsSync(destinationFile)) {
+        existingContent = await readFile(destinationFile);
+    }
+
+    const existingMessages = existingContent.split('\n').reduce((acc, line) => {
+        const [key, value] = line.split('=');
+        if (key && value) acc[key.trim()] = value.trim();
+        return acc;
+    }, {});
+
+    const mergedMessages = { ...existingMessages, ...messages };
+    const headerComments = generateHeader(name, version, sourceFileName, locale);
+    const fileContent = `${headerComments}\n${Object.entries(mergedMessages).map(([key, value]) => `${key}=${value}`).join('\n')}`;
+
+    await writeFile(destinationFile, fileContent);
+    console.log('File updated successfully at', destinationFile);
+
+    // Convert msg tags to PSHTML text tags
+    const updatedData = data.replace(/\[msg:(.*?)\](.*?)\[\/msg\]/g, '~[text:$1]');
+    await writeFile(sourceFile, updatedData);
+    console.log('Source file updated with PSHTML text tags:', sourceFile);
+}
+
+function displayHelp() {
+    console.log(`Usage: create-keys <sourceFile> <locale> [options]
+
+` +
+                `Arguments:
+` +
+                `  <sourceFile>  Path to the source file to be processed
+` +
+                `  <locale>      Locale for which the file should be processed
+
+` +
+                `Options:
+` +
+                `  -Y           Skip confirmation prompt and proceed with file changes
+`);
+}
+
 (async () => {
     const args = process.argv.slice(2);
+    if (args.includes('-h') || args.includes('--help')) {
+        displayHelp();
+        process.exit(0);
+    }
+
     const sourceFile = args[0];
     const locale = args[1];
 
