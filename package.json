@@ -8,7 +8,7 @@
     "translate": "index.js"
   },
   "scripts": {
-    "test": "jest",
+    "test": "mocha --recursive src/test",
     "i18n": "node src/i18n-ize.js"
   },
   "author": "Benjamin Kemp, TESD",
@@ -28,5 +28,9 @@
     "xml2js": "^0.6.2",
     "xmldom": "^0.6.0"
   },
-  "version": "24.11.11"
+  "version": "24.11.11",
+  "devDependencies": {
+    "chai": "^5.1.2",
+    "mocha": "^10.8.2"
+  }
 }

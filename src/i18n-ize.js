@@ -173,20 +173,6 @@ async function consolidateMessages(messages, sourceFile) {
     return messages;
 }
 
-async function handleConsolidationPrompt() {
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
-    return new Promise((resolve) => {
-        rl.question('Do you want to consolidate duplicate values in the source file? (yes/no): ', async (answer) => {
-            rl.close();
-            resolve(answer.toLowerCase() === 'yes');
-        });
-    });
-}
-
 async function processFile(sourceFile, locale) {
     try {
         const { name, version } = await getPluginDetails();
@@ -199,10 +185,7 @@ async function processFile(sourceFile, locale) {
             messages = await extractMessages(data, sourceFile);
         }
 
-        const consolidate = await handleConsolidationPrompt();
-        if (consolidate) {
-            messages = await consolidateMessages(messages, sourceFile);
-        }
+        messages = await consolidateMessages(messages, sourceFile);
 
         const sourceFileName = path.basename(sourceFile, path.extname(sourceFile));
         const destinationDir = path.join('src', 'powerschool', 'MessageKeys');
@@ -224,12 +207,12 @@ async function processFile(sourceFile, locale) {
                 }
                 await backupFiles(sourceFile, destinationFile);
                 const data = await readFile(sourceFile);
-                await continueProcessing(name, version, sourceFileName, locale, destinationFile, messages, data);
+                await continueProcessing(name, version, sourceFileName, locale, destinationFile, messages, data, sourceFile);
             });
         } else {
             await backupFiles(sourceFile, destinationFile);
             const data = await readFile(sourceFile);
-            await continueProcessing(name, version, sourceFileName, locale, destinationFile, messages, data);
+            await continueProcessing(name, version, sourceFileName, locale, destinationFile, messages, data, sourceFile);
         }
     } catch (error) {
         console.error('Error processing the file:', error);
@@ -248,7 +231,7 @@ async function backupFiles(sourceFile, destinationFile) {
     console.log('Backup created for source and destination files.');
 }
 
-async function continueProcessing(name, version, sourceFileName, locale, destinationFile, messages, data) {
+async function continueProcessing(name, version, sourceFileName, locale, destinationFile, messages, data, sourceFile) {
     let existingContent = '';
     if (fs.existsSync(destinationFile)) {
         existingContent = await readFile(destinationFile);
@@ -305,8 +288,13 @@ function displayHelp() {
         process.exit(1);
     }
 
+    const skipPrompt = args.includes('-Y');
+
+    console.log('Skip prompt flag:', skipPrompt);
+
     try {
         await processFile(sourceFile, locale);
+        process.exit(0);
     } catch (err) {
         console.error('Error processing the files:', err);
     }
