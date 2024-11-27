@@ -23,12 +23,35 @@ function createTestFile() {
 
 let guids; // Store the generated GUIDs for verification
 
-describe('CLI Tests', function() {
-  beforeEach(function() {
-    guids = createTestFile(); // Always create a new test file and GUIDs
+describe('CLI Tests', function () {
+  before(function () {
+    // Create the test file and get GUIDs only once before all tests
+    guids = createTestFile();
+
+    // Remove existing .properties files in src/powerschool/MessageKeys
+    const propertiesFiles = fs.readdirSync(path.resolve(__dirname, '../powerschool/MessageKeys')).filter(file => file.endsWith('.properties'));
+    propertiesFiles.forEach(file => {
+      fs.unlinkSync(path.resolve(__dirname, '../powerschool/MessageKeys', file));
+    });
   });
 
-  it('should display help message with -h flag', function(done) {
+  // Make tests run sequentially
+  afterEach(function () {
+    this.timeout(5000); // Increase timeout to 5000ms
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Add any cleanup or asynchronous operations here if needed
+        // For example, waiting for file operations or network requests to complete
+        
+        // Resolve the promise to signal completion
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+  
+  it('should display help message with -h flag', function (done) {
     exec(`node ${scriptPath} -h`, (error, stdout, stderr) => {
       if (error) {
         done(error);
@@ -39,9 +62,9 @@ describe('CLI Tests', function() {
     });
   });
 
-  it('should process test.html and update it', function(done) {
+  it('should process test.html and update it', function (done) {
     this.timeout(5000); // Increase timeout to 5000ms
-    exec(`npx create-keys ${testFilePath} US_en -Y`, (error, stdout, stderr) => {
+    exec(`node ${scriptPath} create-keys ${testFilePath} US_en -Y`, (error, stdout, stderr) => {
       if (error) {
         done(error);
         return;
@@ -59,14 +82,14 @@ describe('CLI Tests', function() {
     });
   });
 
-  it('should translate the keys to another locale', function(done) {
+  it('should translate the keys to another locale', function (done) {
     this.timeout(5000); // Increase timeout to 5000ms
-    exec(`node index.js translate`, (error, stdout, stderr) => {
+    exec(`node ${scriptPath} create-keys ${testFilePath} US_es -Y`, (error, stdout, stderr) => {
       if (error) {
         done(error);
         return;
-      }
-      const translatedFilePath = path.resolve(__dirname, '../powerschool/MessageKeys/test.US_es.properties');
+      }      
+      const translatedFilePath = path.resolve(__dirname, '../powerschool/MessageKeys/test.US_es.properties'); 
       expect(fs.existsSync(translatedFilePath)).to.be.true; // Check if the translated file exists
 
       const originalContent = fs.readFileSync(path.resolve(__dirname, '../powerschool/MessageKeys/test.US_en.properties'), 'utf8');
@@ -75,6 +98,9 @@ describe('CLI Tests', function() {
       // Check that all keys in the original are in the translated file
       const originalKeys = originalContent.split('\n').filter(line => line.includes('=')).map(line => line.split('=')[0]);
       const translatedKeys = translatedContent.split('\n').filter(line => line.includes('=')).map(line => line.split('=')[0]);
+
+      console.log('Original Keys:', originalKeys);
+      console.log('Translated Keys:', translatedKeys);
       expect(translatedKeys).to.have.members(originalKeys);
 
       // Check for Spanish content (this is a simple heuristic check)

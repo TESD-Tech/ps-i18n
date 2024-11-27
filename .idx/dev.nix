@@ -11,6 +11,7 @@
     # pkgs.python311Packages.pip
     # pkgs.nodejs_20
     # pkgs.nodePackages.nodemon
+    pkgs.pnpm
   ];
 
   # Sets environment variables in the workspace
@@ -43,7 +44,11 @@
       # Runs when a workspace is first created
       onCreate = {
         # Example: install JS dependencies from NPM
-        # npm-install = "npm install";
+        bootstrap = ''
+          if ! command -v pnpm &> /dev/null; then
+            curl -fsSL https://get.pnpm.io/install.sh | sh
+          fi
+        '';
       };
       # Runs when the workspace is (re)started
       onStart = {

@@ -79,11 +79,12 @@ async function handleDuplicateKeys(messages, content, sourceFile) {
     });
 
     return new Promise((resolve) => {
-        rl.question('Do you want to re-index the file? (yes/no): ', async (answer) => {
+        rl.question('Do you want to re-index the file? (yes/no): ', (answer) => {
             rl.close();
             if (answer.toLowerCase() === 'yes') {
-                await reindexKeys(content, sourceFile, messages);
-                resolve(true);
+                reindexKeys(content, sourceFile, messages).then(() => {
+                    resolve(true);
+                });
             } else {
                 resolve(false);
             }
@@ -169,7 +170,6 @@ async function consolidateMessages(messages, sourceFile) {
     }
     await writeFile(sourceFile, sourceContent);
 
-    console.log('Consolidation complete. Duplicate values have been merged and source file updated.');
     return messages;
 }
 
@@ -199,22 +199,22 @@ async function processFile(sourceFile, locale) {
                 input: process.stdin,
                 output: process.stdout
             });
-            rl.question('Warning: This operation will modify both the source and destination files. Type "Yes" to proceed: ', async (answer) => {
-                rl.close();
-                if (answer.toLowerCase() !== 'yes') {
-                    console.log('Operation cancelled by user.');
-                    process.exit(0);
-                }
-                await backupFiles(sourceFile, destinationFile);
-                const data = await readFile(sourceFile);
-                await continueProcessing(name, version, sourceFileName, locale, destinationFile, messages, data, sourceFile);
+            await new Promise((resolve) => {
+                rl.question('Warning: This operation will modify both the source and destination files. Type "Yes" to proceed: ', (answer) => {
+                    rl.close();
+                    if (answer.toLowerCase() !== 'yes') {
+                        console.log('Operation cancelled by user.');
+                        process.exit(0);
+                    }
+                    resolve();
+                });
             });
-        } else {
-            await backupFiles(sourceFile, destinationFile);
-            const data = await readFile(sourceFile);
-            await continueProcessing(name, version, sourceFileName, locale, destinationFile, messages, data, sourceFile);
         }
-    } catch (error) {
+
+        await backupFiles(sourceFile, destinationFile); // Backup before any modifications
+        data = await readFile(sourceFile); // Re-read the source file after potential re-indexing
+        await continueProcessing(name, version, sourceFileName, locale, destinationFile, messages, data, sourceFile);
+    }catch (error) {
         console.error('Error processing the file:', error);
     }
 }
@@ -248,12 +248,11 @@ async function continueProcessing(name, version, sourceFileName, locale, destina
     const fileContent = `${headerComments}\n${Object.entries(mergedMessages).map(([key, value]) => `${key}=${value}`).join('\n')}`;
 
     await writeFile(destinationFile, fileContent);
-    console.log('File updated successfully at', destinationFile);
+    console.log('Consolidation complete. Duplicate values have been merged and files updated.');
 
     // Convert msg tags to PSHTML text tags
     const updatedData = data.replace(/\[msg:(.*?)\](.*?)\[\/msg\]/g, '~[text:$1]');
     await writeFile(sourceFile, updatedData);
-    console.log('Source file updated with PSHTML text tags:', sourceFile);
 }
 
 function displayHelp() {
@@ -280,11 +279,10 @@ function displayHelp() {
         process.exit(0);
     }
 
-    const sourceFile = args[0];
-    const locale = args[1];
+    const [command, sourceFile, locale] = args;
 
-    if (!sourceFile || !locale) {
-        console.error('Please provide both a source file and a locale.');
+    if (command !== 'create-keys' || !sourceFile || !locale) {
+        console.error('Usage: create-keys <sourceFile> <locale>');
         process.exit(1);
     }
 
@@ -299,3 +297,5 @@ function displayHelp() {
         console.error('Error processing the files:', err);
     }
 })();
+
+export { processFile };
