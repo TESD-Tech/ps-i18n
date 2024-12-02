@@ -4,7 +4,8 @@
   "main": "index.js",
   "type": "module",
   "bin": {
-    "ps-i18n": "index.js"
+    "create-keys": "src/i18n-ize.js",
+    "translate": "index.js"
   },
   "scripts": {
     "test": "mocha --exit --config mocha.json",
@@ -21,7 +22,7 @@
     "node-fetch": "^3.3.2",
     "xmldom": "^0.6.0"
   },
-  "version": "24.12.02",
+  "version": "24.12.01",
   "devDependencies": {
     "chai": "^5.1.2",
     "mocha": "^10.8.2"
