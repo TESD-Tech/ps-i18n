@@ -1,0 +1,13 @@
+{
+  "timeout": 10000,
+  "slow": 5000,
+  "reporter": "spec",
+  "spec": "src/test/**/*.test.js",
+  "exit": true,
+  "files": [
+    "src/test/index.test.js",
+    "src/test/i18n-ize.test.js", 
+    "src/test/translator.test.js",
+    "src/test/progress.test.js"
+  ]
+}
