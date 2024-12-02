@@ -71,6 +71,8 @@ const languagesFilePath = path.resolve(process.cwd(), 'languages.json');
  */
 async function getLanguages() {
   try {
+    // Ensure languages.json exists before reading
+    await createLanguagesJson();
     const data = await fs.readFile(languagesFilePath, 'utf8');
     return JSON.parse(data);
   } catch (err) {
