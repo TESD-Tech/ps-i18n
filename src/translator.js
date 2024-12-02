@@ -169,13 +169,31 @@ export async function processFile(filePath, targetLanguageCode, targetFilePath) 
   // Read existing target file if it exists
   let existingTranslations = {};
   let headerLines = [];
+  
+  // First, collect headers from source file
+  for (const line of lines) {
+    if (line.trim().startsWith('#')) {
+      // For new target files, update the locale in the header
+      const updatedLine = line.replace(/\(.*?\)/, `(${targetFilePath.split('.').slice(-2)[0]})`);
+      headerLines.push(updatedLine);
+    } else {
+      break; // Stop once we hit non-header content
+    }
+  }
+
   if (fsSync.existsSync(targetFilePath)) {
     const existingContent = await fs.readFile(targetFilePath, 'utf8');
+    let foundHeader = false;
     existingContent.split('\n').forEach(line => {
       const trimmedLine = line.trim();
-      if (trimmedLine.startsWith('#') || !trimmedLine.includes('=')) {
-        headerLines.push(line); // Preserve headers and comments
-      } else {
+      if (trimmedLine.startsWith('#')) {
+        if (!foundHeader) {
+          // Keep existing headers if they exist, don't duplicate
+          headerLines = [];
+          foundHeader = true;
+        }
+        headerLines.push(line);
+      } else if (trimmedLine.includes('=')) {
         const [key, ...value] = trimmedLine.split('=');
         existingTranslations[key.trim()] = value.join('=').trim();
       }

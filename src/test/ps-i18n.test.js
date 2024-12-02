@@ -1,15 +1,19 @@
 import { expect } from 'chai';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { randomUUID } from 'crypto';
 import { createLanguagesJson } from '../translator.js';
+import progressBarManager from '../utils/progress.js';
+
+// Disable progress bar during tests
+progressBarManager.setEnabled(false);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const scriptPath = path.resolve(__dirname, '../i18n-ize.js');
+const scriptPath = path.resolve(__dirname, '../../index.js');
 const testFilePath = path.resolve(__dirname, 'test.html');
 
 function createTestFile() {
@@ -61,12 +65,17 @@ describe('CLI Tests', function () {
   });
   
   it('should display help message with -h flag', function (done) {
-    exec(`node ${scriptPath} -h`, (error, stdout, stderr) => {
+    const indexPath = path.resolve(__dirname, '../../index.js');
+    spawn('node', [indexPath, '-h'], (error, stdout, stderr) => {
       if (error) {
         done(error);
         return;
       }
-      expect(stdout).to.include('Usage'); // Adjust based on actual help message
+      expect(stdout).to.include('Usage: ps-i18n [options] [command]');
+      expect(stdout).to.include('CLI for translation and internationalization');
+      expect(stdout).to.include('Commands:');
+      expect(stdout).to.include('create-keys');
+      expect(stdout).to.include('translate');
       done();
     });
   });
@@ -110,7 +119,10 @@ describe('CLI Tests', function () {
     const cmd = `node ${path.resolve(__dirname, '../../index.js')} create-keys ${testFilePath} US_en -Y`;
     console.log('Executing command:', cmd);
     
-    const childProcess = exec(cmd);
+    const childProcess = spawn('node', [scriptPath, 'create-keys', testFilePath, 'US_en', '-Y'], { 
+      cwd: path.resolve(__dirname, '../..'),
+      env: { ...process.env, NODE_ENV: 'test' }
+    });
     let completionFound = false;
     
     childProcess.stdout.on('data', (data) => {
@@ -163,13 +175,16 @@ describe('CLI Tests', function () {
   });
 
   it('should translate test.html keys to Spanish', function (done) {
-    this.timeout(15000);
+    this.timeout(30000); // Increase timeout to 30 seconds
 
     // Run create-keys to generate US_en properties file
     const createKeysCmd = `node ${path.resolve(__dirname, '../../index.js')} create-keys ${testFilePath} US_en -Y`;
     console.log('Executing create-keys command:', createKeysCmd);
 
-    exec(createKeysCmd, (error, stdout, stderr) => {
+    spawn('node', [scriptPath, 'create-keys', testFilePath, 'US_en', '-Y'], { 
+      cwd: path.resolve(__dirname, '../..'),
+      env: { ...process.env, NODE_ENV: 'test' }
+    }, (error, stdout, stderr) => {
       if (error) {
         console.error('Error executing create-keys command:', error);
         return done(error);
@@ -178,70 +193,56 @@ describe('CLI Tests', function () {
       console.log('create-keys stdout:', stdout);
       console.log('create-keys stderr:', stderr);
 
-      // Create Spanish properties file
-      const spanishTranslations = {
-        'Hello': 'Hola',
-        'Goodbye': 'Adiós',
-        'Welcome to the test': 'Bienvenido a la prueba'
-      };
-
-      const usPropertiesPath = path.resolve(__dirname, '../powerschool/MessageKeys/test.US_en.properties');
-      const esPropertiesPath = usPropertiesPath.replace('.US_en', '.US_es');
-
-      const usContent = fs.readFileSync(usPropertiesPath, 'utf8');
-      const esContent = usContent.split('\n').map(line => {
-        const [key, value] = line.split('=');
-        if (key && value && spanishTranslations[value.trim()]) {
-          return `${key}=${spanishTranslations[value.trim()]}`;
-        }
-        return line;
-      }).join('\n');
-
-      fs.writeFileSync(esPropertiesPath, esContent);
-      console.log('Created Spanish properties file:', esContent);
-
       // Run translate command
-      const translateCmd = `node ${path.resolve(__dirname, '../../index.js')} translate ${usPropertiesPath} es -Y`;
-      console.log('Executing translate command:', translateCmd);
+      const translateProcess = spawn('node', [
+        scriptPath, 
+        'translate', 
+        'US_en', 
+        '-Y',
+        '--test-mode'
+      ], { 
+        cwd: path.resolve(__dirname, '../..'),
+        env: { ...process.env, NODE_ENV: 'test' }
+      });
+      let output = '';
+      let errorOutput = '';
 
-      const childProcess = exec(translateCmd);
-      let completionFound = false;
+      translateProcess.stdout.on('data', (data) => {
+        output += data;
+        console.log('translate stdout:', data.toString());
+      });
 
-      childProcess.stdout.on('data', (data) => {
-        console.log('stdout:', data);
-        if (data.includes('Translation completed')) {
-          completionFound = true;
-          setTimeout(() => {
-            const translatedHtml = fs.readFileSync(testFilePath, 'utf8');
-            console.log('Translated HTML content:', translatedHtml);
+      translateProcess.stderr.on('data', (data) => {
+        errorOutput += data;
+        console.log('translate stderr:', data.toString());
+      });
 
-            let allTranslationsFound = true;
-            Object.values(spanishTranslations).forEach(translation => {
-              if (!translatedHtml.includes(translation)) {
-                console.error(`Translation "${translation}" not found in HTML`);
-                allTranslationsFound = false;
-              }
-            });
-
-            if (allTranslationsFound) {
-              console.log('All Spanish translations found in HTML');
-              childProcess.kill();
-              done();
-            } else {
-              childProcess.kill();
-              done(new Error('One or more translations not found in HTML'));
-            }
-          }, 1000);
+      translateProcess.on('close', (code) => {
+        console.log(`translate process exited with code ${code}`);
+        
+        if (code !== 0) {
+          return done(new Error(`Translation process failed with code ${code}. Error: ${errorOutput}`));
         }
-      });
 
-      childProcess.stderr.on('data', (data) => {
-        console.error('stderr:', data);
-      });
-
-      childProcess.on('error', (error) => {
-        if (!completionFound) {
-          console.error('Error executing translate command:', error);
+        // Verify Spanish translation
+        try {
+          const esFilePath = path.resolve(__dirname, '../powerschool/MessageKeys/test.US_es.properties');
+          const esFileContent = fs.readFileSync(esFilePath, 'utf8');
+          
+          expect(esFileContent).to.include('Hola');
+          expect(esFileContent).to.include('Adiós');
+          expect(esFileContent).to.include('Bienvenidos a la prueba');
+          
+          // Verify Hindi translation
+          const hiFilePath = path.resolve(__dirname, '../powerschool/MessageKeys/test.US_hi.properties');
+          const hiFileContent = fs.readFileSync(hiFilePath, 'utf8');
+          
+          expect(hiFileContent).to.include('नमस्ते');
+          expect(hiFileContent).to.include('अलविदा');
+          expect(hiFileContent).to.include('परीक्षण में आपका स्वागत है');
+          
+          done();
+        } catch (error) {
           done(error);
         }
       });

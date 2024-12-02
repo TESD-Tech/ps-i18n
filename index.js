@@ -24,6 +24,14 @@ const version = packageJson.version;
 
 const program = new Command();
 
+// Check if running in test environment
+const isTestMode = process.env.NODE_ENV === 'test' || process.argv.includes('--test-mode');
+
+// Disable progress bar in test mode
+if (isTestMode) {
+  progressBarManager.setEnabled(false);
+}
+
 async function translate(options) {
   message.log('Starting translation process...');
 
@@ -80,7 +88,8 @@ async function translate(options) {
     .description('CLI for translation and internationalization')
     .version(version)
     .option('-d, --debug', 'Enable debug output', false)
-    .option('-Y, --yes', 'Bypass the "yes" prompt for confirmation', false);
+    .option('-Y, --yes', 'Bypass the "yes" prompt for confirmation', false)
+    .option('--test-mode', 'Run in test mode (disables progress bar)');
 
   program
     .command('create-keys <sourceFile> <locale>')
@@ -96,9 +105,14 @@ async function translate(options) {
     .description('Translate all message keys to the specified locale')
     .option('-d, --debug', 'Enable debug output', false)
     .option('-Y, --yes', 'Bypass the "yes" prompt for confirmation', false)
+    .option('--test-mode', 'Run in test mode (disables progress bar)')
     .action(async (locale) => {
       setDebug(program.opts().debug);
       setConfirm(program.opts().yes);
+
+      if (program.opts().testMode) {
+        progressBarManager.setEnabled(false);
+      }
 
       const messageKeysDir = path.resolve(__dirname, 'src/powerschool/MessageKeys');
       await translateAllFilesToAllLanguages(messageKeysDir, sourceLocale);
