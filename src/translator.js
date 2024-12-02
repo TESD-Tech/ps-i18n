@@ -4,8 +4,9 @@ import path from 'path';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import Table from 'cli-table3';
+import chalk from 'chalk';
 import fetch from 'node-fetch';
-import { message } from './utils/messages.js';
+import { message, getMessages } from './utils/messages.js';
 import config from '../translation.config.js';
 import progressBarManager from './utils/progress.js';
 
@@ -67,11 +68,178 @@ async function getLanguages() {
 
 const languages = await getLanguages(); // Await the promise
 
-// Initialize ASCII table
-const table = new Table({
-  head: ['Source File', 'Processed', 'Total'],
-  colWidths: [40, 10, 10]
-});
+// Create a more visually appealing and informative progress table
+function createProgressTable() {
+  return new Table({
+    head: [
+      chalk.bold.blue('🗂️  File'), 
+      chalk.bold.green('✅ Processed'), 
+      chalk.bold.yellow('🌐 Total'), 
+      chalk.bold.magenta('📊 Progress'), 
+      chalk.bold.cyan('⏱️ Status')
+    ],
+    colWidths: [35, 15, 15, 25, 20],
+    style: {
+      'padding-left': 1,
+      'padding-right': 1,
+      head: ['bold'],
+      border: ['gray']
+    },
+    chars: {
+      'top': '═',
+      'top-mid': '╤',
+      'top-left': '╔',
+      'top-right': '╗',
+      'bottom': '═',
+      'bottom-mid': '╧',
+      'bottom-left': '╚',
+      'bottom-right': '╝',
+      'left': '║',
+      'left-mid': '╟',
+      'right': '║',
+      'right-mid': '╢',
+      'mid': '─',
+      'mid-mid': '┼',
+      'middle': '│'
+    }
+  });
+}
+
+/**
+ * Create a progress bar visualization
+ * @param {number} processed - Number of processed lines
+ * @param {number} total - Total number of lines
+ * @returns {string} Colorful progress bar
+ */
+function createProgressBar(processed, total) {
+  if (total === 0) return chalk.gray('∅ No content');
+  
+  const percentage = Math.round((processed / total) * 100);
+  const barLength = 10;
+  const filledLength = Math.round((percentage / 100) * barLength);
+  
+  let color = chalk.red;
+  if (percentage > 33) color = chalk.yellow;
+  if (percentage > 66) color = chalk.green;
+  
+  const progressBar = color('█'.repeat(filledLength) + '░'.repeat(barLength - filledLength));
+  return `${progressBar} ${percentage}%`;
+}
+
+/**
+ * Determine translation status
+ * @param {number} processed - Number of processed lines
+ * @param {number} total - Total number of lines
+ * @returns {string} Status emoji and text
+ */
+function determineStatus(processed, total) {
+  if (total === 0) return chalk.gray('🚫 Skipped');
+  if (processed === 0) return chalk.red('🔄 Pending');
+  if (processed < total) return chalk.yellow('🚧 In Progress');
+  return chalk.green('✅ Completed');
+}
+
+/**
+ * Update the progress table with enhanced styling and information
+ */
+function updateTable() {
+  if (progressBarManager.enabled) {
+    console.clear();
+    
+    // Create the table
+    const styledTable = createProgressTable();
+
+    // Track overall progress
+    let completedFiles = 0;
+    let totalProcessed = 0;
+    let totalExpected = 0;
+
+    // Populate the table with enhanced information
+    table.forEach(row => {
+      const fileName = row[0];
+      const processed = parseInt(row[1], 10) || 0;
+      const total = parseInt(row[2], 10) || 0;
+      
+      // Calculate file-level progress
+      const progressBar = createProgressBar(processed, total);
+      const status = determineStatus(processed, total);
+      
+      // Add row to styled table
+      styledTable.push([
+        chalk.cyan(fileName),
+        chalk.green(`${processed}`),
+        chalk.yellow(`${total}`),
+        progressBar,
+        status
+      ]);
+
+      // Update overall progress tracking
+      if (processed > 0 && processed === total) {
+        completedFiles++;
+      }
+      totalProcessed += processed;
+      totalExpected += total;
+    });
+
+    // Display the table
+    console.log(chalk.bold.underline.magenta('🌍 Translation Progress Dashboard 🌐'));
+    console.log(styledTable.toString());
+
+    // Overall summary with visual flair
+    console.log('\n' + chalk.bold('🚀 Translation Summary:'));
+    
+    // Animated progress indicators
+    const overallProgress = totalExpected > 0 
+      ? Math.round((totalProcessed / totalExpected) * 100)
+      : 0;
+    
+    const progressEmojis = ['🌱', '🌿', '🌳', '🌲', '🏞️'];
+    const progressEmojiIndex = Math.min(
+      Math.floor((overallProgress / 100) * progressEmojis.length), 
+      progressEmojis.length - 1
+    );
+    
+    console.log(
+      chalk.green(`📊 Files Processed: ${completedFiles}/${table.length} `) + 
+      progressEmojis[progressEmojiIndex]
+    );
+    console.log(
+      chalk.yellow(`🔍 Lines Translated: ${totalProcessed}/${totalExpected} `) +
+      (overallProgress === 100 ? '🎉' : '✨')
+    );
+    console.log(
+      chalk.bold.magenta(`💡 Overall Progress: ${overallProgress}% `) +
+      (overallProgress === 100 ? '🏆' : '🚧')
+    );
+
+    // Display recent messages with enhanced styling
+    const messages = getMessages();
+    if (messages.length > 0) {
+      console.log('\n' + chalk.bold('📜 Recent Activity:'));
+      messages.forEach(({ message: msg, type, timestamp }) => {
+        const time = timestamp.toLocaleTimeString();
+        switch(type) {
+          case 'error':
+            console.log(chalk.red(`[${time}] ❌ ${msg}`));
+            break;
+          case 'warn':
+            console.log(chalk.yellow(`[${time}] ⚠️ ${msg}`));
+            break;
+          case 'info':
+            console.log(chalk.blue(`[${time}] ℹ️ ${msg}`));
+            break;
+          case 'debug':
+            console.log(chalk.gray(`[${time}] 🔍 ${msg}`));
+            break;
+          default:
+            console.log(chalk.white(`[${time}] ${msg}`));
+        }
+      });
+    }
+  }
+}
+
+const table = createProgressTable();
 
 const progress = {};
 
@@ -136,16 +304,6 @@ function logDebug(message) {
 }
 
 /**
- * Update the progress table
- */
-function updateTable() {
-  if (progressBarManager.enabled) {
-    console.clear();
-    console.log(table.toString());
-  }
-}
-
-/**
  * Process a properties file
  * @param {string} filePath - The path to the properties file
  * @param {string} targetLanguageCode - The target language code
@@ -153,137 +311,96 @@ function updateTable() {
  */
 export async function processFile(filePath, targetLanguageCode, targetFilePath) {
   message.debug(`Processing file: ${filePath} for language: ${targetLanguageCode}`);
-  const sourceFileName = path.basename(filePath, path.extname(filePath)).replace(`.${config.sourceLocale}`, '');
+  
+  // Use the full filename with extension
+  const sourceFileName = path.basename(filePath);
   message.debug(`Source file name: ${sourceFileName}`);
+  
   if (!progress[sourceFileName]) {
     progress[sourceFileName] = { processed: 0, total: 0, index: table.length };
-    table.push([sourceFileName, 0, 0]);
+    
+    // Use full filename in the table
+    table.push([
+      sourceFileName, 
+      '0', 
+      '0'
+    ]);
   }
 
   const fileContent = await fs.readFile(filePath, 'utf8');
   const lines = fileContent.split('\n');
   const totalLines = lines.filter(line => line.trim() && !line.trim().startsWith('#')).length;
-  message.debug(`Total lines to process: ${totalLines}`);
-  progress[sourceFileName].total += totalLines;
-
-  message.debug(`Target file path: ${targetFilePath}`);
-
-  // Read existing target file if it exists
-  let existingTranslations = {};
-  let headerLines = [];
   
-  // First, collect headers from source file
+  // Update total lines for this file
+  progress[sourceFileName].total = totalLines;
+  table[progress[sourceFileName].index][2] = `${totalLines}`;
+
+  // Process translations
+  let processedLines = 0;
+  const translatedContent = [];
+
   for (const line of lines) {
-    if (line.trim().startsWith('#')) {
-      // For new target files, update the locale in the header
-      const updatedLine = line.replace(/\(.*?\)/, `(${targetFilePath.split('.').slice(-2)[0]})`);
-      headerLines.push(updatedLine);
+    if (line.trim() && !line.trim().startsWith('#')) {
+      const translatedLine = await translateLine(line, targetLanguageCode);
+      translatedContent.push(translatedLine);
+      processedLines++;
+      
+      // Update processed lines
+      progress[sourceFileName].processed = processedLines;
+      table[progress[sourceFileName].index][1] = `${processedLines}`;
+      
+      // Update table after each line
+      updateTable();
     } else {
-      break; // Stop once we hit non-header content
+      translatedContent.push(line);
     }
   }
 
-  if (fsSync.existsSync(targetFilePath)) {
-    const existingContent = await fs.readFile(targetFilePath, 'utf8');
-    let foundHeader = false;
-    existingContent.split('\n').forEach(line => {
-      const trimmedLine = line.trim();
-      if (trimmedLine.startsWith('#')) {
-        if (!foundHeader) {
-          // Keep existing headers if they exist, don't duplicate
-          headerLines = [];
-          foundHeader = true;
-        }
-        headerLines.push(line);
-      } else if (trimmedLine.includes('=')) {
-        const [key, ...value] = trimmedLine.split('=');
-        existingTranslations[key.trim()] = value.join('=').trim();
-      }
-    });
-  }
-
-  // Use fs.promises.open for creating the write stream
-  const fileHandle = await fs.open(targetFilePath, 'w'); 
+  // Write translated content
+  await fs.writeFile(targetFilePath, translatedContent.join('\n'), 'utf8');
   
-  // Initialize progress bar with total lines to process
-  progressBarManager.initialize(totalLines, 'Translating');
+  message.info(`Translated ${sourceFileName} to ${targetLanguageCode}`);
+
+  // Ensure table is updated one final time after file completion
+  updateTable();
   
-  const mergedTranslations = { ...existingTranslations };
-
-  for (const line of lines) {
-    message.debug(`Processing line: ${line}`);
-    const trimmedLine = line.trim();
-    if (!trimmedLine || trimmedLine.startsWith('#')) {
-      mergedTranslations[trimmedLine] = '';
-      message.debug(`Skipping comment or empty line: ${line}`);
-      continue;
-    }
-
-    const [keyPart, ...valueParts] = trimmedLine.split('=');
-    if (valueParts.length === 0) {
-      mergedTranslations[keyPart.trim()] = '';
-      continue;
-    }
-
-    if (config.testingModeEnabled && progress[sourceFileName].processed >= 1) {
-      mergedTranslations[keyPart.trim()] = valueParts.join('=').trim();
-      continue;
-    }
-
-    message.debug(`Translating line: ${line}`);
-    const valuePart = valueParts.join('=').trim();
-    const translatedValue = await translateLine(valuePart, targetLanguageCode);
-    message.debug(`Translated line: ${keyPart.trim()}=${translatedValue.trim()}`);
-    mergedTranslations[keyPart.trim()] = translatedValue.trim();
-
-    progress[sourceFileName].processed++;
-    progressBarManager.increment(`Processing line: ${line}`); // Increment progress bar for each line processed
-
-    table[progress[sourceFileName].index][1] = progress[sourceFileName].processed;
-    updateTable();
-
-    if (!config.testingModeEnabled) {
-      await humanLikeDelay();
-    }
-  }
-
-  progressBarManager.stop(); // Stop the progress bar after processing all lines
-
-  // Write headers, comments, and merged translations to target file
-  for (const line of headerLines) {
-    await fileHandle.write(`${line}\n`);
-  }
-  for (const [key, value] of Object.entries(mergedTranslations)) {
-    if (key && value) { // Exclude empty keys or values
-      await fileHandle.write(`${key}=${value}\n`);
-    }
-  }
-
-  await fileHandle.close(); // Close the file handle
-  message.debug(`Translation completed for file: ${targetFilePath}`);
-  message.info(`Translation completed. Translated file saved as ${targetFilePath}`);
+  return {
+    sourceFileName,
+    processedLines,
+    totalLines
+  };
 }
 
 /**
  * Translate all files to all languages
  * @param {string} messageKeysDir - The directory containing message keys
- * @param {string} sourceLocale - The source locale
  */
-export async function translateAllFilesToAllLanguages(messageKeysDir, sourceLocale) {
+export async function translateAllFilesToAllLanguages(messageKeysDir) {
   const files = await fs.readdir(messageKeysDir);
-  const sourceFiles = files.filter(file => file.endsWith(`.${sourceLocale}.properties`));
+  const sourceFiles = files.filter(file => file.endsWith(`.${config.sourceLocale}.properties`));
+
+  // Get target languages from languages array, excluding source locale
+  const targetLangs = languages
+    .map(lang => `${config.sourceLocale.split('_')[0]}_${lang['Language Code']}`)
+    .filter(lang => lang !== config.sourceLocale);
 
   for (const sourceFile of sourceFiles) {
-    const filePath = path.join(messageKeysDir, sourceFile);
-    const regionCode = sourceLocale.split('_')[0]; // Extract region code from source locale
-    for (const language of languages) {
-      const targetLanguage = language['Language Code'];
-      if (targetLanguage !== sourceLocale) {
-        const targetFilePath = filePath.replace(`.${sourceLocale}`, `.${regionCode}_${targetLanguage}`);
-        await processFile(filePath, targetLanguage, targetFilePath);
-      }
+    const sourceFilePath = path.join(messageKeysDir, sourceFile);
+    const sourceFileName = path.basename(sourceFile, path.extname(sourceFile));
+    const baseFileName = sourceFileName.replace(`.${config.sourceLocale}`, '');
+
+    for (const lang of targetLangs) {
+      const targetFileName = `${baseFileName}.${lang}.properties`;
+      const targetFilePath = path.join(messageKeysDir, targetFileName);
+      await processFile(sourceFilePath, lang, targetFilePath);
     }
   }
+
+  // Ensure final table update
+  updateTable();
+  
+  // Add a completion message
+  message.info(chalk.bold.green('✨ Translation completed successfully! ✨'));
 }
 
 export { languages };

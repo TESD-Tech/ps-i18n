@@ -1,4 +1,6 @@
 let DEBUG = false;
+let messageQueue = [];
+const MAX_MESSAGES = 5; // Keep last 5 messages
 
 export const setDebug = (enabled) => {
   DEBUG = enabled;
@@ -6,33 +8,48 @@ export const setDebug = (enabled) => {
 
 export const setConfirm = (enabled) => {
   const message = enabled ? 'Confirmation is set.' : 'Confirmation is not set.';
-  console.log(message);
+  addToMessageQueue(message);
+};
+
+function addToMessageQueue(msg, type = 'info') {
+  messageQueue.push({ message: msg, type, timestamp: new Date() });
+  if (messageQueue.length > MAX_MESSAGES) {
+    messageQueue.shift(); // Remove oldest message
+  }
+}
+
+export const getMessages = () => messageQueue;
+
+export const clearMessages = () => {
+  messageQueue = [];
 };
 
 export const message = {
   debug: (...args) => {
     if (DEBUG) {
-      console.log('[DEBUG]', ...args);
+      const msg = args.join(' ');
+      addToMessageQueue(msg, 'debug');
+      console.log('[DEBUG]', msg);
     }
   },
   info: (...args) => {
-    if (DEBUG) {
-      console.log('[INFO]', ...args);
-    }
+    const msg = args.join(' ');
+    addToMessageQueue(msg, 'info');
+    console.log('[INFO]', msg);
   },
   log: (...args) => {
-    if (DEBUG) {
-      console.log('[LOG]', ...args);
-    }
+    const msg = args.join(' ');
+    addToMessageQueue(msg, 'log');
+    console.log('[LOG]', msg);
   },
   warn: (...args) => {
-    if (DEBUG) {
-      console.warn('[WARN]', ...args);
-    }
+    const msg = args.join(' ');
+    addToMessageQueue(msg, 'warn');
+    console.warn('[WARN]', msg);
   },
   error: (...args) => {
-    if (DEBUG) {
-      console.error('[ERROR]', ...args);
-    }
+    const msg = args.join(' ');
+    addToMessageQueue(msg, 'error');
+    console.error('[ERROR]', msg);
   }
 };
