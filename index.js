@@ -5,10 +5,11 @@ import path from 'path';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import { Command } from 'commander';
-import { processFile, languages, createLanguagesJson } from './src/translator.js';
+import { processFile, languages, createLanguagesJson, translateAllFilesToAllLanguages } from './src/translator.js';
 import { message, setDebug, setConfirm } from './src/utils/messages.js';
 import config from './translation.config.js';
 import { processFile as createKeys } from './src/i18n-ize.js';
+import progressBarManager from './src/utils/progress.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -65,6 +66,7 @@ async function translate(options) {
         }
       }
     }
+    message.log('Translation process completed successfully.');
   } catch (err) {
     message.error('Unable to process files:', err);
   }
@@ -99,13 +101,7 @@ async function translate(options) {
       setConfirm(program.opts().yes);
 
       const messageKeysDir = path.resolve(__dirname, 'src/powerschool/MessageKeys');
-      const files = await fs.readdir(messageKeysDir);
-      const sourceFiles = files.filter(file => file.endsWith(`.${sourceLocale}.properties`));
-
-      for (const sourceFile of sourceFiles) {
-        const filePath = path.join(messageKeysDir, sourceFile);
-        await processFile(filePath, locale);
-      }
+      await translateAllFilesToAllLanguages(messageKeysDir, sourceLocale);
     });
 
   program
@@ -113,15 +109,14 @@ async function translate(options) {
     .action(() => {
       message.error('Unknown command. Use --help to see the list of available commands.');
       program.outputHelp();
+      console.log('Usage!:');
+      console.log('  create-keys <sourceFile> <locale>');
+      console.log('  translate <locale>');
     });
 
-  await program.parseAsync();
+  program.parse(process.argv);
 
   if (!process.argv.slice(2).length) {
     program.outputHelp();
   }
-
-  console.log('Usage!:');
-  console.log('  create-keys <sourceFile> <locale>');
-  console.log('  translate <locale>');
 })();
