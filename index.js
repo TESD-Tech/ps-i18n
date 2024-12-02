@@ -37,7 +37,7 @@ async function translate(options) {
 
   try {
     const languagesFilePath = path.resolve(process.cwd(), 'languages.json');
-    message.log(`Checking for languages.json at: ${languagesFilePath}`);
+    message.info(`Checking for languages.json at: ${languagesFilePath}`);
     const defaultLanguages = [
       { "Language Code": "en", "Language": "English" },
       { "Language Code": "es", "Language": "Spanish" },
@@ -46,11 +46,11 @@ async function translate(options) {
 
     // Check if languages.json exists
     if (!fsSync.existsSync(languagesFilePath)) {
-      message.log('languages.json not found. Creating with default values.');
+      message.warn('languages.json not found. Creating with default values.');
       await fs.writeFile(languagesFilePath, JSON.stringify(defaultLanguages, null, 2));
-      message.log('languages.json has been created with default values.');
+      message.info('languages.json has been created with default values.');
     } else {
-      message.log('languages.json already exists.');
+      message.info('languages.json already exists.');
     }
 
     let currentDir = messageKeysDir;
@@ -58,7 +58,7 @@ async function translate(options) {
 
     // If no .properties files exist, copy from the example directory
     if (files.length === 0 || files.every(file => !file.includes(`.${sourceLocale}.properties`))) {
-      message.log('No matching files found in MessageKeys, copying from example.');
+      message.warn('No matching files found in MessageKeys, copying from example.');
       const exampleFiles = await fs.readdir(fallbackFilePath);
       const exampleFile = exampleFiles.find(file => file.includes(`.${sourceLocale}.properties`));
       if (exampleFile) {
@@ -70,28 +70,28 @@ async function translate(options) {
     const filesToProcess = files.filter(file => file.includes(`.${sourceLocale}.properties`));
 
     if (filesToProcess.length === 0) {
-      message.log('No files to process.');
+      message.warn('No files to process.');
       return;
     }
 
     for (const file of filesToProcess) {
       const filePath = path.join(currentDir, file);
-      message.log(`Processing file: ${filePath}`);
+      message.info(`Processing file: ${filePath}`);
 
       if (options.locale) {
         // Translate to specific locale only
-        message.log(`Translating to ${options.locale}`);
+        message.info(`Translating to ${options.locale}`);
         await processFile(filePath, options.locale, config.testingModeEnabled);
       } else {
         // Translate to all languages
         for (const language of languages) {
           const targetLanguage = language['Language Code'];
-          message.log(`Translating to ${targetLanguage}`);
+          message.info(`Translating to ${targetLanguage}`);
           await processFile(filePath, targetLanguage, config.testingModeEnabled);
         }
       }
     }
-    message.log('Translation process completed successfully.');
+    message.info('Translation process completed successfully.');
   } catch (err) {
     message.error('Unable to process files:', err);
   }
