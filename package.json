@@ -4,8 +4,7 @@
   "main": "index.js",
   "type": "module",
   "bin": {
-    "create-keys": "src/i18n-ize.js",
-    "translate": "index.js"
+    "ps-i18n": "index.js"
   },
   "scripts": {
     "test": "mocha --exit --config mocha.json",
