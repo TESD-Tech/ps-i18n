@@ -402,6 +402,13 @@ async function createKeys(sourceFile, locale, skipPrompt) {
 if (import.meta.url === `file://${process.argv[1]}`) {
     const args = process.argv.slice(2);
 
+    // Add logic to check for test-mode
+    const testMode = args.includes('--test-mode') || args.includes('-t');
+    if (testMode) {
+        progressBarManager.setEnabled(false);
+        console.log('Progress table is disabled in test mode.');
+    }
+
     if (args.length < 3) {
         console.error('Usage: node i18n-ize.js <sourceFile> <locale>');
         process.exit(1);

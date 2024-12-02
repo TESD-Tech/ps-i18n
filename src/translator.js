@@ -327,33 +327,31 @@ function updateTable() {
  */
 export async function translateAllFilesToAllLanguages(messageKeysDir, sourceLocale) {
   const files = await fs.readdir(messageKeysDir);
+  const filesToProcess = files.filter(file => file.includes(`.${sourceLocale}.properties`));
 
-  // Extract the locale (e.g., "US") and base language code (e.g., "en")
-  const [locale, baseLanguageCode] = sourceLocale.split('_'); 
+  const locale = sourceLocale.split('_')[0];
 
-  // Filter for source files with the specified sourceLocale
-  const sourceFiles = files.filter(file => file.endsWith(`.${sourceLocale}.properties`));
-
-  // Get target language codes, excluding the base language code
-  const targetLangs = languages
-    .map(lang => lang['Language Code']) 
-    .filter(lang => lang !== baseLanguageCode); 
-
-  for (const sourceFile of sourceFiles) {
-    const sourceFilePath = path.join(messageKeysDir, sourceFile);
-    const sourceFileName = path.basename(sourceFile, path.extname(sourceFile));
-    const baseFileName = sourceFileName.replace(`.${sourceLocale}`, '');
-
-    for (const lang of targetLangs) {
-      // Construct target file name using the locale and target language code
-      const targetFileName = `${baseFileName}.${locale}_${lang}.properties`; 
-      const targetFilePath = path.join(messageKeysDir, targetFileName);
-      await processFile(sourceFilePath, lang, targetFilePath);
-    }
+  if (filesToProcess.length === 0) {
+    message.warn('No files to process.');
+    return;
   }
 
-  updateTable();
-  message.info(chalk.bold.green('✨ Translation completed successfully! ✨'));
+  for (const file of filesToProcess) {
+    const filePath = path.join(messageKeysDir, file);
+    message.info(`Processing file: ${filePath}`);
+
+    if (config.testMode) {
+      message.info('Running in test mode. Progress updates are disabled.');
+    }
+
+    for (const language of languages) {
+      const targetLanguage = language['Language Code'];
+      message.info(`Translating to ${targetLanguage}`);
+      const targetFilePath = path.join(messageKeysDir, file.replace(`.${sourceLocale}.properties`, `.${locale}_${targetLanguage}.properties`));
+      await processFile(filePath, targetLanguage, targetFilePath);
+    }
+  }
+  message.info('Translation process completed successfully.');
 }
 
 export { languages };

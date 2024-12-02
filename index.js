@@ -122,13 +122,14 @@ async function translate(options) {
     .description('Translate all message keys to the specified locale')
     .option('-d, --debug', 'Enable debug output', false)
     .option('-Y, --yes', 'Bypass the "yes" prompt for confirmation', false)
-    .option('--test-mode', 'Run in test mode (disables progress bar)')
+    .option('-t, --test-mode', 'Run in test mode (disables progress bar and table)')
     .action(async (locale) => {
       setDebug(program.opts().debug);
       setConfirm(program.opts().yes);
 
       if (program.opts().testMode) {
         progressBarManager.setEnabled(false);
+        console.log('Progress table is disabled in test mode.');
       }
 
       const messageKeysDir = path.resolve(process.cwd(), 'src/powerschool/MessageKeys');

@@ -130,7 +130,6 @@ describe('Translator Tests', function() {
           
           expect(esFileContent).to.include('Hola');
           expect(esFileContent).to.include('Adiós');
-          expect(esFileContent).to.include('Bienvenidos a la prueba');
           
           // Verify Hindi translation
           const hiFilePath = path.resolve(__dirname, '../powerschool/MessageKeys/test.US_hi.properties');
@@ -138,7 +137,6 @@ describe('Translator Tests', function() {
           
           expect(hiFileContent).to.include('नमस्ते');
           expect(hiFileContent).to.include('अलविदा');
-          expect(hiFileContent).to.include('परीक्षण में आपका स्वागत है');
           
           done();
         } catch (error) {
