@@ -37,6 +37,7 @@ async function translate(options) {
 
   try {
     const languagesFilePath = path.resolve(process.cwd(), 'languages.json');
+    message.log(`Checking for languages.json at: ${languagesFilePath}`);
     const defaultLanguages = [
       { "Language Code": "en", "Language": "English" },
       { "Language Code": "es", "Language": "Spanish" },
@@ -48,6 +49,8 @@ async function translate(options) {
       message.log('languages.json not found. Creating with default values.');
       await fs.writeFile(languagesFilePath, JSON.stringify(defaultLanguages, null, 2));
       message.log('languages.json has been created with default values.');
+    } else {
+      message.log('languages.json already exists.');
     }
 
     let currentDir = messageKeysDir;

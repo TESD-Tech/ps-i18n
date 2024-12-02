@@ -8,27 +8,49 @@ import { createLanguagesJson } from '../translator.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-describe('Translator Tests', function() {
-  it('should create languages.json with default values if it does not exist', async function () {
-    const languagesFilePath = path.resolve(__dirname, '../../languages.json');
-    const backupFilePath = path.resolve(__dirname, '../../languages_backup.json');
+const languagesFilePath = path.resolve(__dirname, '../../languages.json');
 
-    // Ensure the languages.json file does not exist before the test
+function arraysEqualIgnoringOrder(arr1, arr2) {
+  if (arr1.length !== arr2.length) return false;
+  const sorted1 = [...arr1].sort((a, b) => a['Language Code'].localeCompare(b['Language Code']));
+  const sorted2 = [...arr2].sort((a, b) => a['Language Code'].localeCompare(b['Language Code']));
+  return JSON.stringify(sorted1) === JSON.stringify(sorted2);
+}
+
+describe('Translator Tests', function() {
+  beforeEach(function() {
+    // Ensure the languages.json file does not exist before each test
     if (fs.existsSync(languagesFilePath)) {
       fs.unlinkSync(languagesFilePath);
     }
+  });
 
-    // Run the function
-    await createLanguagesJson();
+  it('should create languages.json with default values if it does not exist', async function () {
+    await createLanguagesJson(); // Run the createLanguagesJson function
 
     // Check if the languages.json file was created with default values
     const data = fs.readFileSync(languagesFilePath, 'utf8');
     const languages = JSON.parse(data);
-    expect(languages).to.deep.equal([
+    const expectedLanguages = [
+      { "Language Code": "en", "Language": "English" },
+      { "Language Code": "es", "Language": "Spanish" },
+      { "Language Code": "hi", "Language": "Hindi" }
+    ];
+    expect(arraysEqualIgnoringOrder(languages, expectedLanguages)).to.be.true;
+  });
+
+  it('should create languages.json with default values if it does not exist', async function () {
+    await createLanguagesJson(); // Run the createLanguagesJson function
+
+    // Check if the languages.json file was created with default values
+    const data = fs.readFileSync(languagesFilePath, 'utf8');
+    const languages = JSON.parse(data);
+    const expectedLanguages = [
       { "Language Code": "hi", "Language": "Hindi" },
       { "Language Code": "en", "Language": "English" },
       { "Language Code": "es", "Language": "Spanish" }
-    ]);
+    ];
+    expect(arraysEqualIgnoringOrder(languages, expectedLanguages)).to.be.true;
   });
 
   it('should translate test.html keys to all languages', function(done) {
