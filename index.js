@@ -36,6 +36,20 @@ async function translate(options) {
   message.log('Starting translation process...');
 
   try {
+    const languagesFilePath = path.resolve(process.cwd(), 'languages.json');
+    const defaultLanguages = [
+      { "Language Code": "en", "Language": "English" },
+      { "Language Code": "es", "Language": "Spanish" },
+      { "Language Code": "hi", "Language": "Hindi" }
+    ];
+
+    // Check if languages.json exists
+    if (!fsSync.existsSync(languagesFilePath)) {
+      message.log('languages.json not found. Creating with default values.');
+      await fs.writeFile(languagesFilePath, JSON.stringify(defaultLanguages, null, 2));
+      message.log('languages.json has been created with default values.');
+    }
+
     let currentDir = messageKeysDir;
     let files = await fs.readdir(currentDir);
 
