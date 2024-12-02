@@ -66,17 +66,35 @@ describe('CLI Tests', function () {
   
   it('should display help message with -h flag', function (done) {
     const indexPath = path.resolve(__dirname, '../../index.js');
-    spawn('node', [indexPath, '-h'], (error, stdout, stderr) => {
-      if (error) {
+    const helpProcess = spawn('node', [indexPath, '-h']);
+    
+    let stdout = '';
+    let stderr = '';
+
+    helpProcess.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    helpProcess.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    helpProcess.on('close', (code) => {
+      try {
+        expect(code).to.equal(0);
+        expect(stdout).to.include('Usage: ps-i18n [options] [command]');
+        expect(stdout).to.include('CLI for translation and internationalization');
+        expect(stdout).to.include('Commands:');
+        expect(stdout).to.include('create-keys');
+        expect(stdout).to.include('translate');
+        done();
+      } catch (error) {
         done(error);
-        return;
       }
-      expect(stdout).to.include('Usage: ps-i18n [options] [command]');
-      expect(stdout).to.include('CLI for translation and internationalization');
-      expect(stdout).to.include('Commands:');
-      expect(stdout).to.include('create-keys');
-      expect(stdout).to.include('translate');
-      done();
+    });
+
+    helpProcess.on('error', (err) => {
+      done(err);
     });
   });
 
@@ -175,23 +193,43 @@ describe('CLI Tests', function () {
   });
 
   it('should translate test.html keys to Spanish', function (done) {
-    this.timeout(30000); // Increase timeout to 30 seconds
+    this.timeout(60000); // Increase timeout to 60 seconds
+    console.log('Running create-keys command...');
+    
+    const scriptPath = path.resolve(__dirname, '../../index.js');
+    const testFilePath = path.resolve(__dirname, 'test.html');
 
-    // Run create-keys to generate US_en properties file
-    const createKeysCmd = `node ${path.resolve(__dirname, '../../index.js')} create-keys ${testFilePath} US_en -Y`;
-    console.log('Executing create-keys command:', createKeysCmd);
-
-    spawn('node', [scriptPath, 'create-keys', testFilePath, 'US_en', '-Y'], { 
+    // Create keys process
+    const createKeysProcess = spawn('node', [
+      scriptPath, 
+      'create-keys', 
+      testFilePath, 
+      'US_en', 
+      '-Y'
+    ], { 
       cwd: path.resolve(__dirname, '../..'),
       env: { ...process.env, NODE_ENV: 'test' }
-    }, (error, stdout, stderr) => {
-      if (error) {
-        console.error('Error executing create-keys command:', error);
-        return done(error);
-      }
+    });
 
-      console.log('create-keys stdout:', stdout);
-      console.log('create-keys stderr:', stderr);
+    let createKeysOutput = '';
+    let createKeysError = '';
+
+    createKeysProcess.stdout.on('data', (data) => {
+      createKeysOutput += data.toString();
+      console.log('create-keys stdout:', data.toString());
+    });
+
+    createKeysProcess.stderr.on('data', (data) => {
+      createKeysError += data.toString();
+      console.log('create-keys stderr:', data.toString());
+    });
+
+    createKeysProcess.on('close', (createKeysCode) => {
+      console.log('create-keys process exited with code:', createKeysCode);
+      
+      if (createKeysCode !== 0) {
+        return done(new Error(`create-keys failed with code ${createKeysCode}. Error: ${createKeysError}`));
+      }
 
       // Run translate command
       const translateProcess = spawn('node', [
@@ -204,24 +242,25 @@ describe('CLI Tests', function () {
         cwd: path.resolve(__dirname, '../..'),
         env: { ...process.env, NODE_ENV: 'test' }
       });
-      let output = '';
-      let errorOutput = '';
+
+      let translateOutput = '';
+      let translateError = '';
 
       translateProcess.stdout.on('data', (data) => {
-        output += data;
+        translateOutput += data.toString();
         console.log('translate stdout:', data.toString());
       });
 
       translateProcess.stderr.on('data', (data) => {
-        errorOutput += data;
+        translateError += data.toString();
         console.log('translate stderr:', data.toString());
       });
 
-      translateProcess.on('close', (code) => {
-        console.log(`translate process exited with code ${code}`);
+      translateProcess.on('close', (translateCode) => {
+        console.log('translate process exited with code:', translateCode);
         
-        if (code !== 0) {
-          return done(new Error(`Translation process failed with code ${code}. Error: ${errorOutput}`));
+        if (translateCode !== 0) {
+          return done(new Error(`Translation process failed with code ${translateCode}. Error: ${translateError}`));
         }
 
         // Verify Spanish translation
@@ -246,6 +285,14 @@ describe('CLI Tests', function () {
           done(error);
         }
       });
+
+      translateProcess.on('error', (err) => {
+        done(new Error(`Translation process error: ${err}`));
+      });
+    });
+
+    createKeysProcess.on('error', (err) => {
+      done(new Error(`create-keys process error: ${err}`));
     });
   });
 });
