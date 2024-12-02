@@ -1,14 +1,24 @@
 #!/usr/bin/env node
 
+// Import necessary modules
 import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
 import { DOMParser } from 'xmldom';
 
+// Declare a variable for readline interface
 let rl;
 
+/**
+ * Function to get plugin details from XML file
+ * 
+ * This function reads the plugin.xml file, parses it, and extracts the plugin name and version.
+ * 
+ * @returns {Promise<Object>} An object containing the plugin name and version.
+ */
 async function getPluginDetails() {
     try {
+        // Read and parse the plugin.xml file
         const xmlData = await fs.promises.readFile('plugin.xml', 'utf8');
         const doc = new DOMParser().parseFromString(xmlData, 'text/xml');
         const pluginElement = doc.getElementsByTagName('plugin')[0];
@@ -21,6 +31,14 @@ async function getPluginDetails() {
     }
 }
 
+/**
+ * Function to read a file asynchronously
+ * 
+ * This function reads the contents of a file and returns it as a string.
+ * 
+ * @param {string} filePath The path to the file to be read.
+ * @returns {Promise<string>} The contents of the file.
+ */
 async function readFile(filePath) {
     try {
         return await fs.promises.readFile(filePath, 'utf8');
@@ -30,6 +48,14 @@ async function readFile(filePath) {
     }
 }
 
+/**
+ * Function to write content to a file asynchronously
+ * 
+ * This function writes the provided content to a file.
+ * 
+ * @param {string} filePath The path to the file to be written.
+ * @param {string} content The content to be written to the file.
+ */
 async function writeFile(filePath, content) {
     try {
         await fs.promises.writeFile(filePath, content, 'utf8');
@@ -39,34 +65,71 @@ async function writeFile(filePath, content) {
     }
 }
 
+/**
+ * Function to generate a header for message key files
+ * 
+ * This function generates a header string containing the plugin name, version, and source file name.
+ * 
+ * @param {string} name The plugin name.
+ * @param {string} version The plugin version.
+ * @param {string} sourceFileName The source file name.
+ * @param {string} locale The locale.
+ * @returns {string} The generated header string.
+ */
 function generateHeader(name, version, sourceFileName, locale) {
     return `# ${name} - Version: ${version}\n# MessageKeys for: ${sourceFileName} (${locale})\n`;
 }
 
+/**
+ * Function to extract message keys from file content
+ * 
+ * This function extracts message keys from the provided file content.
+ * 
+ * @param {string} content The file content.
+ * @param {string} sourceFile The source file name.
+ * @returns {Promise<Object>} An object containing the extracted message keys.
+ */
 async function extractMessages(content, sourceFile) {
     const extractedMessages = {};
     let startIndex = 0;
 
     while (startIndex < content.length) {
+        // Find the start of a message tag
         const startTagIndex = content.indexOf('[msg:', startIndex);
         if (startTagIndex === -1) break;
+
+        // Find the end of the message tag
         const endOfStartTag = content.indexOf(']', startTagIndex);
         if (endOfStartTag === -1) break;
 
+        // Extract the message key
         const key = content.slice(startTagIndex + 5, endOfStartTag);
 
+        // Find the end of the message content
         const endTagIndex = content.indexOf('[/msg]', endOfStartTag);
         if (endTagIndex === -1) break;
 
+        // Extract the message content
         const messageContent = content.slice(endOfStartTag + 1, endTagIndex).trim();
         extractedMessages[key] = messageContent;
 
+        // Move the start index past the current message tag
         startIndex = endTagIndex + 6;
     }
 
     return extractedMessages;
 }
 
+/**
+ * Function to handle duplicate keys
+ * 
+ * This function checks for duplicate keys in the extracted messages and prompts the user to re-index the file if necessary.
+ * 
+ * @param {Object} messages The extracted messages.
+ * @param {string} content The file content.
+ * @param {string} sourceFile The source file name.
+ * @returns {Promise<boolean>} A boolean indicating whether the file was re-indexed.
+ */
 async function handleDuplicateKeys(messages, content, sourceFile) {
     const duplicateKeys = findDuplicateKeys(messages);
     if (duplicateKeys.length === 0) {
@@ -95,6 +158,14 @@ async function handleDuplicateKeys(messages, content, sourceFile) {
     });
 }
 
+/**
+ * Function to find duplicate keys
+ * 
+ * This function checks for duplicate keys in the extracted messages.
+ * 
+ * @param {Object} messages The extracted messages.
+ * @returns {Array<string>} An array of duplicate keys.
+ */
 function findDuplicateKeys(messages) {
     const keyCounts = {};
     const duplicateKeys = [];
@@ -109,6 +180,15 @@ function findDuplicateKeys(messages) {
     return duplicateKeys;
 }
 
+/**
+ * Function to re-index keys
+ * 
+ * This function re-indexes the keys in the file content.
+ * 
+ * @param {string} content The file content.
+ * @param {string} sourceFile The source file name.
+ * @param {Object} messages The extracted messages.
+ */
 async function reindexKeys(content, sourceFile, messages) {
     let newContent = content;
     const keyUpdates = {};
@@ -148,6 +228,15 @@ async function reindexKeys(content, sourceFile, messages) {
     }
 }
 
+/**
+ * Function to consolidate messages
+ * 
+ * This function consolidates the messages by merging duplicate values.
+ * 
+ * @param {Object} messages The extracted messages.
+ * @param {string} sourceFile The source file name.
+ * @returns {Promise<Object>} The consolidated messages.
+ */
 async function consolidateMessages(messages, sourceFile) {
     const valueToKeyMap = {};
     const keyUpdates = {};
@@ -176,6 +265,14 @@ async function consolidateMessages(messages, sourceFile) {
     return messages;
 }
 
+/**
+ * Function to process a file
+ * 
+ * This function processes a file and extracts message keys.
+ * 
+ * @param {string} sourceFile The source file name.
+ * @param {string} locale The locale.
+ */
 async function processFile(sourceFile, locale) {
     try {
         const { name, version } = await getPluginDetails();
@@ -218,11 +315,19 @@ async function processFile(sourceFile, locale) {
         await backupFiles(sourceFile, destinationFile); // Backup before any modifications
         data = await readFile(sourceFile); // Re-read the source file after potential re-indexing
         await continueProcessing(name, version, sourceFileName, locale, destinationFile, messages, data, sourceFile);
-    }catch (error) {
+    } catch (error) {
         console.error('Error processing the file:', error);
     }
 }
 
+/**
+ * Function to create a backup of a file
+ * 
+ * This function creates a backup of a file.
+ * 
+ * @param {string} sourceFile The source file name.
+ * @param {string} destinationFile The destination file name.
+ */
 async function backupFiles(sourceFile, destinationFile) {
     const backupDir = 'original_files_backup';
     fs.promises.mkdir(backupDir, { recursive: true });
@@ -235,6 +340,20 @@ async function backupFiles(sourceFile, destinationFile) {
     console.log('Backup created for source and destination files.');
 }
 
+/**
+ * Function to continue processing after initial operations
+ * 
+ * This function continues processing after the initial operations.
+ * 
+ * @param {string} name The plugin name.
+ * @param {string} version The plugin version.
+ * @param {string} sourceFileName The source file name.
+ * @param {string} locale The locale.
+ * @param {string} destinationFile The destination file name.
+ * @param {Object} messages The extracted messages.
+ * @param {string} data The file content.
+ * @param {string} sourceFile The source file name.
+ */
 async function continueProcessing(name, version, sourceFileName, locale, destinationFile, messages, data, sourceFile) {
     let existingContent = '';
     if (fs.existsSync(destinationFile)) {
@@ -259,45 +378,32 @@ async function continueProcessing(name, version, sourceFileName, locale, destina
     await writeFile(sourceFile, updatedData);
 }
 
-function displayHelp() {
-    console.log(`Usage: create-keys <sourceFile> <locale> [options]
-
-` +
-                `Arguments:
-` +
-                `  <sourceFile>  Path to the source file to be processed
-` +
-                `  <locale>      Locale for which the file should be processed
-
-` +
-                `Options:
-` +
-                `  -Y           Skip confirmation prompt and proceed with file changes
-`);
-}
-
-process.on('exit', () => {
-    if (rl) {
-        rl.close();
-    }
-});
-
+/**
+ * Function to create message keys
+ * 
+ * This function creates message keys.
+ * 
+ * @param {string} sourceFile The source file name.
+ * @param {string} locale The locale.
+ * @param {boolean} skipPrompt Whether to skip the confirmation prompt.
+ */
 async function createKeys(sourceFile, locale, skipPrompt) {
     await processFile(sourceFile, locale);
 }
 
+// Check if the script is being run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
     const args = process.argv.slice(2);
 
     if (args.length < 3) {
-        console.error('Usage: create-keys <sourceFile> <locale>');
+        console.error('Usage: node i18n-ize.js <sourceFile> <locale>');
         process.exit(1);
     }
 
     const [command, sourceFile, locale] = args;
 
     if (command !== 'create-keys' || !sourceFile || !locale) {
-        console.error('Usage: create-keys <sourceFile> <locale>');
+        console.error('Usage: node i18n-ize.js <sourceFile> <locale>');
         process.exit(1);
     }
 
