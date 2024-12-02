@@ -139,8 +139,10 @@ function logDebug(message) {
  * Update the progress table
  */
 function updateTable() {
-  console.clear();
-  console.log(table.toString());
+  if (progressBarManager.enabled) {
+    console.clear();
+    console.log(table.toString());
+  }
 }
 
 /**
