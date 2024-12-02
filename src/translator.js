@@ -331,6 +331,8 @@ export async function translateAllFilesToAllLanguages(messageKeysDir, sourceLoca
   const files = await fs.readdir(messageKeysDir);
   const filesToProcess = files.filter(file => file.includes(`.${sourceLocale}.properties`));
 
+  const cleanLocale = sourceLocale.split('_')[0];
+
   if (filesToProcess.length === 0) {
     message.warn('No files to process.');
     return;
@@ -347,7 +349,7 @@ export async function translateAllFilesToAllLanguages(messageKeysDir, sourceLoca
     for (const language of languages) {
       const targetLanguage = language['Language Code'];
       message.info(`Translating to ${targetLanguage}`);
-      const targetFilePath = path.join(messageKeysDir, file.replace(`.${sourceLocale}.properties`, `.${targetLanguage}.properties`));
+      const targetFilePath = path.join(messageKeysDir, file.replace(`.${sourceLocale}.properties`, `.${cleanLocale}_${targetLanguage}.properties`));
       await processFile(filePath, targetLanguage, targetFilePath);
     }
   }
