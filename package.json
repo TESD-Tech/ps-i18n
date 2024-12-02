@@ -7,8 +7,7 @@
     "@tesd-tech/ps-i18n": "index.js"
   },
   "scripts": {
-    "test": "mocha --exit --config mocha.json",
-    "i18n": "node src/i18n-ize.js"
+    "test": "NODE_ENV=test mocha --exit --config mocha.json"
   },
   "author": "Benjamin Kemp, TESD",
   "license": "MIT",
