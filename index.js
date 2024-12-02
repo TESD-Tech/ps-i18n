@@ -10,6 +10,7 @@ import { message, setDebug, setConfirm } from './src/utils/messages.js';
 import config from './translation.config.js';
 import { processFile as createKeys } from './src/i18n-ize.js';
 import progressBarManager from './src/utils/progress.js';
+import { createProgressTable } from './src/utils/progress-table.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -91,6 +92,7 @@ async function translate(options) {
         }
       }
     }
+    createProgressTable(languagesFilePath);
     message.info('Translation process completed successfully.');
   } catch (err) {
     message.error('Unable to process files:', err);
