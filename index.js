@@ -3,6 +3,7 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import { Command } from 'commander';
 import { processFile, languages, createLanguagesJson } from './src/translator.js';
 import { message, setDebug, setConfirm } from './src/utils/messages.js';
@@ -15,6 +16,10 @@ const __dirname = path.dirname(__filename);
 const messageKeysDir = './src/powerschool/MessageKeys';
 const fallbackFilePath = path.join(__dirname, 'src/config/US_en_example');
 const sourceLocale = 'US_en';
+
+const packageJsonPath = path.resolve(__dirname, 'package.json');
+const packageJson = JSON.parse(fsSync.readFileSync(packageJsonPath, 'utf8'));
+const version = packageJson.version;
 
 const program = new Command();
 
@@ -71,10 +76,9 @@ async function translate(options) {
   program
     .name('ps-i18n')
     .description('CLI for translation and internationalization')
-    .version('24.11.13')
+    .version(version)
     .option('-d, --debug', 'Enable debug output', false)
     .option('-Y, --yes', 'Bypass the "yes" prompt for confirmation', false);
-
 
   program
     .command('create-keys <sourceFile> <locale>')
@@ -86,13 +90,22 @@ async function translate(options) {
     });
 
   program
-    .command('translate')
-    .description('Run the translation process')
-    .option('--locale <code>', 'Target language code (e.g., es, zh)')
-    .action(async (options) => {
+    .command('translate <locale>')
+    .description('Translate all message keys to the specified locale')
+    .option('-d, --debug', 'Enable debug output', false)
+    .option('-Y, --yes', 'Bypass the "yes" prompt for confirmation', false)
+    .action(async (locale) => {
       setDebug(program.opts().debug);
       setConfirm(program.opts().yes);
-      await translate(options);
+
+      const messageKeysDir = path.resolve(__dirname, 'src/powerschool/MessageKeys');
+      const files = await fs.readdir(messageKeysDir);
+      const sourceFiles = files.filter(file => file.endsWith(`.${sourceLocale}.properties`));
+
+      for (const sourceFile of sourceFiles) {
+        const filePath = path.join(messageKeysDir, sourceFile);
+        await processFile(filePath, locale);
+      }
     });
 
   program
@@ -107,4 +120,8 @@ async function translate(options) {
   if (!process.argv.slice(2).length) {
     program.outputHelp();
   }
+
+  console.log('Usage!:');
+  console.log('  create-keys <sourceFile> <locale>');
+  console.log('  translate <locale>');
 })();

@@ -32,5 +32,22 @@
   "devDependencies": {
     "chai": "^5.1.2",
     "mocha": "^10.8.2"
+  },
+  "keywords": [
+    "internationalization",
+    "translation",
+    "PowerSchool",
+    "CLI"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TESD-Tech/ps-i18n.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TESD-Tech/ps-i18n/issues"
+  },
+  "homepage": "https://github.com/TESD-Tech/ps-i18n#readme",
+  "engines": {
+    "node": ">=14.0.0"
   }
 }

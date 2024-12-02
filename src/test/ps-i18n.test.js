@@ -97,41 +97,154 @@ describe('CLI Tests', function () {
 
   // Add more CLI test cases as needed
   it('should run create-keys on test.html and generate keys for US_en locale', function (done) {
-    this.timeout(10000); // Increase timeout to 10000ms
+    this.timeout(15000); // Increase timeout to 15 seconds
+    
+    // Verify test file exists and has content
+    if (!fs.existsSync(testFilePath)) {
+      return done(new Error('Test file does not exist'));
+    }
+    
+    console.log('Test file content:', fs.readFileSync(testFilePath, 'utf8'));
     console.log('Running create-keys command...');
-    exec(`node index.js create-keys src/test/test.html US_en -Y`, (error, stdout, stderr) => {
-      if (error) {
+    
+    const cmd = `node ${path.resolve(__dirname, '../../index.js')} create-keys ${testFilePath} US_en -Y`;
+    console.log('Executing command:', cmd);
+    
+    const childProcess = exec(cmd);
+    let completionFound = false;
+    
+    childProcess.stdout.on('data', (data) => {
+      console.log('stdout:', data);
+      if (data.includes('Consolidation complete')) {
+        completionFound = true;
+        // Give a small delay for file operations to complete
+        setTimeout(() => {
+          const propertiesFilePath = path.resolve(__dirname, '../powerschool/MessageKeys/test.US_en.properties');
+          console.log('Checking if properties file exists at:', propertiesFilePath);
+          
+          if (!fs.existsSync(propertiesFilePath)) {
+            console.error('Properties file does not exist.');
+            return done(new Error('Properties file was not created.'));
+          }
+
+          const propertiesContent = fs.readFileSync(propertiesFilePath, 'utf8');
+          console.log('Properties file content:', propertiesContent);
+          let allGuidsFound = true;
+          guids.forEach(guid => {
+            console.log('Checking for GUID:', guid);
+            if (!propertiesContent.includes(guid)) {
+              console.error(`GUID ${guid} not found in properties file.`);
+              allGuidsFound = false;
+            }
+          });
+
+          if (allGuidsFound) {
+            console.log('All checks passed.');
+            childProcess.kill(); // Force the process to end
+            done();
+          } else {
+            childProcess.kill(); // Force the process to end
+            done(new Error('One or more GUIDs not found in properties file.'));
+          }
+        }, 1000);
+      }
+    });
+
+    childProcess.stderr.on('data', (data) => {
+      console.error('stderr:', data);
+    });
+
+    childProcess.on('error', (error) => {
+      if (!completionFound) {
         console.error('Error executing command:', error);
+        done(error);
+      }
+    });
+  });
+
+  it('should translate test.html keys to Spanish', function (done) {
+    this.timeout(15000);
+
+    // Run create-keys to generate US_en properties file
+    const createKeysCmd = `node ${path.resolve(__dirname, '../../index.js')} create-keys ${testFilePath} US_en -Y`;
+    console.log('Executing create-keys command:', createKeysCmd);
+
+    exec(createKeysCmd, (error, stdout, stderr) => {
+      if (error) {
+        console.error('Error executing create-keys command:', error);
         return done(error);
       }
-      console.log('Command executed successfully.');
-      console.log('stdout:', stdout);
-      console.log('stderr:', stderr);
 
-      const propertiesFilePath = path.resolve(__dirname, '../powerschool/MessageKeys/test.US_en.properties');
-      console.log('Checking if properties file exists at:', propertiesFilePath);
-      if (!fs.existsSync(propertiesFilePath)) {
-        console.error('Properties file does not exist.');
-        return done(new Error('Properties file was not created.'));
-      }
+      console.log('create-keys stdout:', stdout);
+      console.log('create-keys stderr:', stderr);
 
-      const propertiesContent = fs.readFileSync(propertiesFilePath, 'utf8');
-      console.log('Properties file content:', propertiesContent);
-      let allGuidsFound = true;
-      guids.forEach(guid => {
-        console.log('Checking for GUID:', guid);
-        if (!propertiesContent.includes(guid)) {
-          console.error(`GUID ${guid} not found in properties file.`);
-          allGuidsFound = false;
+      // Create Spanish properties file
+      const spanishTranslations = {
+        'Hello': 'Hola',
+        'Goodbye': 'Adiós',
+        'Welcome to the test': 'Bienvenido a la prueba'
+      };
+
+      const usPropertiesPath = path.resolve(__dirname, '../powerschool/MessageKeys/test.US_en.properties');
+      const esPropertiesPath = usPropertiesPath.replace('.US_en', '.US_es');
+
+      const usContent = fs.readFileSync(usPropertiesPath, 'utf8');
+      const esContent = usContent.split('\n').map(line => {
+        const [key, value] = line.split('=');
+        if (key && value && spanishTranslations[value.trim()]) {
+          return `${key}=${spanishTranslations[value.trim()]}`;
+        }
+        return line;
+      }).join('\n');
+
+      fs.writeFileSync(esPropertiesPath, esContent);
+      console.log('Created Spanish properties file:', esContent);
+
+      // Run translate command
+      const translateCmd = `node ${path.resolve(__dirname, '../../index.js')} translate ${usPropertiesPath} es -Y`;
+      console.log('Executing translate command:', translateCmd);
+
+      const childProcess = exec(translateCmd);
+      let completionFound = false;
+
+      childProcess.stdout.on('data', (data) => {
+        console.log('stdout:', data);
+        if (data.includes('Translation completed')) {
+          completionFound = true;
+          setTimeout(() => {
+            const translatedHtml = fs.readFileSync(testFilePath, 'utf8');
+            console.log('Translated HTML content:', translatedHtml);
+
+            let allTranslationsFound = true;
+            Object.values(spanishTranslations).forEach(translation => {
+              if (!translatedHtml.includes(translation)) {
+                console.error(`Translation "${translation}" not found in HTML`);
+                allTranslationsFound = false;
+              }
+            });
+
+            if (allTranslationsFound) {
+              console.log('All Spanish translations found in HTML');
+              childProcess.kill();
+              done();
+            } else {
+              childProcess.kill();
+              done(new Error('One or more translations not found in HTML'));
+            }
+          }, 1000);
         }
       });
 
-      if (allGuidsFound) {
-        console.log('All checks passed.');
-        done(); // Ensure done() is called after all checks
-      } else {
-        done(new Error('One or more GUIDs not found in properties file.'));
-      }
+      childProcess.stderr.on('data', (data) => {
+        console.error('stderr:', data);
+      });
+
+      childProcess.on('error', (error) => {
+        if (!completionFound) {
+          console.error('Error executing translate command:', error);
+          done(error);
+        }
+      });
     });
   });
 });

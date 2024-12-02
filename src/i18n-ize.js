@@ -282,11 +282,16 @@ process.on('exit', () => {
     }
 });
 
-(async () => {
+async function createKeys(sourceFile, locale, skipPrompt) {
+    await processFile(sourceFile, locale);
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
     const args = process.argv.slice(2);
-    if (args.includes('-h') || args.includes('--help')) {
-        displayHelp();
-        process.exit(0);
+
+    if (args.length < 3) {
+        console.error('Usage: create-keys <sourceFile> <locale>');
+        process.exit(1);
     }
 
     const [command, sourceFile, locale] = args;
@@ -298,14 +303,8 @@ process.on('exit', () => {
 
     const skipPrompt = args.includes('-Y');
 
-    console.log('Skip prompt flag:', skipPrompt);
-
-    try {
-        await processFile(sourceFile, locale);
-        process.exit(0);
-    } catch (err) {
-        console.error('Error processing the files:', err);
-    }
-})();
+    // Call createKeys function with arguments
+    createKeys(sourceFile, locale, skipPrompt);
+}
 
 export { processFile };
