@@ -8,6 +8,7 @@
     "src/test/index.test.js",
     "src/test/i18n-ize.test.js", 
     "src/test/translator.test.js",
-    "src/test/progress.test.js"
+    "src/test/progress.test.js",
+    "src/test/progress-table.test.js"
   ]
 }
