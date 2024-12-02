@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
 import { DOMParser } from 'xmldom';
+import progressBarManager from './utils/progress.js';
 
 // Declare a variable for readline interface
 let rl;
@@ -93,6 +94,8 @@ async function extractMessages(content, sourceFile) {
     const extractedMessages = {};
     let startIndex = 0;
 
+    progressBarManager.initialize(Object.keys(content).length, 'Extracting messages');
+
     while (startIndex < content.length) {
         // Find the start of a message tag
         const startTagIndex = content.indexOf('[msg:', startIndex);
@@ -113,9 +116,13 @@ async function extractMessages(content, sourceFile) {
         const messageContent = content.slice(endOfStartTag + 1, endTagIndex).trim();
         extractedMessages[key] = messageContent;
 
+        progressBarManager.increment(`Processing key: ${key}`);
+
         // Move the start index past the current message tag
         startIndex = endTagIndex + 6;
     }
+
+    progressBarManager.stop();
 
     return extractedMessages;
 }
