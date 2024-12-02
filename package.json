@@ -21,7 +21,7 @@
     "node-fetch": "^3.3.2",
     "xmldom": "^0.6.0"
   },
-  "version": "24.12.08",
+  "version": "24.12.09",
   "devDependencies": {
     "chai": "^5.1.2",
     "mocha": "^11.0.1"

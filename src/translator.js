@@ -81,7 +81,7 @@ async function getLanguages() {
 
 const languages = await getLanguages(); 
 
-const table = createProgressTable();
+const table = createProgressTable(languagesFilePath);
 const progress = {};
 
 /**
@@ -237,7 +237,7 @@ export async function processFile(filePath, targetLanguageCode, targetFilePath) 
 function updateTable() {
   if (progressBarManager.enabled) {
     console.clear();
-    const styledTable = createProgressTable();
+    const styledTable = createProgressTable(languagesFilePath);
 
     let completedFiles = 0;
     let totalProcessed = 0;
@@ -351,6 +351,8 @@ export async function translateAllFilesToAllLanguages(messageKeysDir, sourceLoca
       await processFile(filePath, targetLanguage, targetFilePath);
     }
   }
+
+  updateTable(); 
   message.info('Translation process completed successfully.');
 }
 

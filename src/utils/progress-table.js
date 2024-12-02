@@ -1,12 +1,19 @@
 import Table from 'cli-table3';
 import chalk from 'chalk';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Resolve __dirname in ES module syntax
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Create a visually appealing progress table
+ * @param {string} languagesFilePath - Path to the languages.json file
  * @returns {Table} Configured progress table
  */
-export function createProgressTable() {
-  return new Table({
+export function createProgressTable(languagesFilePath) {
+  const table = new Table({
     head: [
       chalk.bold.blue('🗂️  File'),
       chalk.bold.green('✅ Processed'),
@@ -40,6 +47,11 @@ export function createProgressTable() {
       'middle': ''
     }
   });
+
+  // Display the languages.json file path
+  console.log(chalk.bold(`Languages configuration: ${languagesFilePath}`));
+
+  return table;
 }
 
 /**
@@ -83,8 +95,9 @@ export function determineStatus(processed, total) {
 export async function updateTable() {
   console.clear();
   
-  // Create the table
-  const styledTable = createProgressTable();
+  // Correctly resolve the path to languages.json
+  const languagesFilePath = path.resolve(__dirname, '../languages.json');
+  const styledTable = createProgressTable(languagesFilePath);
 
   // Track overall progress
   let completedFiles = 0;
