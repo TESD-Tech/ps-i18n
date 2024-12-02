@@ -114,7 +114,7 @@ async function translate(options) {
         progressBarManager.setEnabled(false);
       }
 
-      const messageKeysDir = path.resolve(__dirname, 'src/powerschool/MessageKeys');
+      const messageKeysDir = path.resolve(process.cwd(), 'src/powerschool/MessageKeys');
       await translateAllFilesToAllLanguages(messageKeysDir, sourceLocale);
     });
 
