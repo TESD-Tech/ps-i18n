@@ -3,11 +3,43 @@ import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('Key Generation Tests', function() {
+  before(function () {
+    // Clear out MessageKeys directory
+    const messageKeysDir = path.resolve(__dirname, '../powerschool/MessageKeys');
+    if (fs.existsSync(messageKeysDir)) {
+      fs.rmSync(messageKeysDir, { recursive: true, force: true });
+    }
+
+    // Create new test html file (./src/test/test.html) with [msg:...][/msg] tags using GIUDs and the default nodes for Hello, Goodbye, and Welcome to the test
+    const testFilePath = path.resolve(__dirname, 'test.html');
+    // Remove existing test.html if it exists
+    if (fs.existsSync(testFilePath)) {
+      fs.unlinkSync(testFilePath);
+    }
+
+    const testFileContent = `
+      <html>
+      <body>
+        <div>[msg:${crypto.randomUUID()}]Hello[/msg]</div>
+        <div class="nested"><span>[msg:${crypto.randomUUID()}]Goodbye[/msg]</span></div>
+        <input type="text" placeholder="[msg:${crypto.randomUUID()}]Testing 123[/msg]" />
+        <div>[msg:${crypto.randomUUID()}]Welcome to the test & < > " '[/msg]</div>
+        <p>[msg:${crypto.randomUUID()}]Regular text with embedded translation[/msg]</p>
+        <pre>[msg:${crypto.randomUUID()}]Pre with html tags <bold>and</bold> embedded translation[/msg]</pre>
+      </body>
+      </html>
+    `;
+    
+    fs.writeFileSync(testFilePath, testFileContent);
+  });
+
+
   it('should create keys from HTML file', function(done) {
     this.timeout(30000); // Increase timeout 
     

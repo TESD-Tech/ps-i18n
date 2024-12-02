@@ -123,7 +123,13 @@ async function translateLine(line, targetLanguage) {
 
     if (data[0]?.[0]?.[0]) {
       const translatedValue = data[0][0][0];
-      const translatedLine = `${key}=${translatedValue}`;
+      let translatedLine = `${key}=${translatedValue}`;
+
+      // If we're in debug mode, log the translation
+      if (process.env.NODE_ENV === 'test') {
+        translatedLine += ` - ${new Date().toISOString()}`;
+      }
+
       message.debug(`Translated: "${value}" -> "${translatedValue}" (${targetLanguage})`);
       return translatedLine;
     }
@@ -147,7 +153,7 @@ async function translateLine(line, targetLanguage) {
     };
 
     const fallbackValue = fallbackTranslations[targetLanguage]?.[value] || value;
-    const fallbackLine = `${key}=${fallbackValue}`;
+    const fallbackLine = `${key}=${fallbackValue} - ${new Date().toISOString()}`;
     message.warn(`Used fallback translation for "${value}" (Target: ${targetLanguage})`);
     return fallbackLine;
   }
@@ -213,14 +219,7 @@ export async function processFile(filePath, targetLanguageCode, targetFilePath) 
 
   for (const line of lines) {
     if (line.trim() && !line.trim().startsWith('#')) {
-      let translatedLine = await translateLine(line, targetLanguageCode);
-      
-      // Append timestamp only if running tests
-      if (process.env.NODE_ENV === 'test') {
-        const timestamp = new Date().toISOString();
-        translatedLine += ` - ${timestamp}`;
-      }
-
+      const translatedLine = await translateLine(line, targetLanguageCode);
       translatedContent.push(translatedLine);
       processedLines++;
       
