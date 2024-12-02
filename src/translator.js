@@ -23,8 +23,8 @@ const __dirname = path.dirname(__filename);
  * If the file is invalid or missing, it creates a backup and regenerates it with default values.
  */
 export async function createLanguagesJson() {
-  const languagesFilePath = path.resolve(__dirname, '../languages.json');
-  const backupFilePath = path.resolve(__dirname, '../languages_backup.json');
+  const languagesFilePath = path.resolve(process.cwd(), 'languages.json');
+  const backupFilePath = path.resolve(process.cwd(), 'languages_backup.json');
 
   const defaultLanguages = [
     { "Language Code": "hi", "Language": "Hindi" },
@@ -63,7 +63,7 @@ export async function createLanguagesJson() {
 }
 
 // Load language codes from languages.json
-const languagesFilePath = path.resolve(__dirname, '../languages.json');
+const languagesFilePath = path.resolve(process.cwd(), 'languages.json');
 
 /**
  * Asynchronously reads and parses the `languages.json` file.
@@ -329,8 +329,6 @@ export async function translateAllFilesToAllLanguages(messageKeysDir, sourceLoca
   const files = await fs.readdir(messageKeysDir);
   const filesToProcess = files.filter(file => file.includes(`.${sourceLocale}.properties`));
 
-  const locale = sourceLocale.split('_')[0];
-
   if (filesToProcess.length === 0) {
     message.warn('No files to process.');
     return;
@@ -347,12 +345,12 @@ export async function translateAllFilesToAllLanguages(messageKeysDir, sourceLoca
     for (const language of languages) {
       const targetLanguage = language['Language Code'];
       message.info(`Translating to ${targetLanguage}`);
-      const targetFilePath = path.join(messageKeysDir, file.replace(`.${sourceLocale}.properties`, `.${locale}_${targetLanguage}.properties`));
+      const targetFilePath = path.join(messageKeysDir, file.replace(`.${sourceLocale}.properties`, `.${targetLanguage}.properties`));
       await processFile(filePath, targetLanguage, targetFilePath);
     }
   }
 
-  updateTable(); 
+  createProgressTable(languagesFilePath);
   message.info('Translation process completed successfully.');
 }
 
