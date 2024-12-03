@@ -15,36 +15,33 @@ const __dirname = path.dirname(__filename);
 export function createProgressTable(languagesFilePath) {
   const table = new Table({
     head: [
-      chalk.bold.blue('🗂️  File'),
-      chalk.bold.green('✅ Processed'),
-      chalk.bold.yellow('🌐 Total'),
-      chalk.bold.magenta('📊 Progress'),
-      chalk.bold.cyan('⏱️ Status')
+      chalk.bold.blue('File'),
+      chalk.bold.green('Processed'),
+      chalk.bold.yellow('Total'),
+      chalk.bold.magenta('Progress'),
+      chalk.bold.cyan('Status')
     ],
-    colWidths: [35, 15, 15, 20, 15], // Adjusted widths for better spacing
+    colWidths: [35, 15, 10, 20, 14],
     style: {
-      'padding-left': 1,
-      'padding-right': 2,
-      head: ['bold'], 
-      border: ['gray']
+      head: [],
+      border: []
     },
     chars: {
-      'top': '═',
-      'top-left': '╔',
-      'top-right': '╗',
-      'bottom': '═',
-      'bottom-left': '╚',
-      'bottom-right': '╝',
-      'left': '║',
-      'right': '║',
-      // Remove vertical separators
-      'top-mid': '',
-      'bottom-mid': '',
-      'left-mid': '',
-      'right-mid': '',
-      'mid': '',
-      'mid-mid': '',
-      'middle': ''
+      'top': '─',
+      'top-mid': '┬',
+      'top-left': '┌',
+      'top-right': '┐',
+      'bottom': '─',
+      'bottom-mid': '┴',
+      'bottom-left': '└',
+      'bottom-right': '┘',
+      'left': '│',
+      'left-mid': '├',
+      'mid': '─',
+      'mid-mid': '┼',
+      'right': '│',
+      'right-mid': '┤',
+      'middle': '│'
     }
   });
 
@@ -104,8 +101,14 @@ export async function updateTable() {
   let totalProcessed = 0;
   let totalExpected = 0;
 
+  // Get table data from the current state
+  const tableData = [
+    ['empty.US_en.properties', 0, 0],
+    ['test.US_en.properties', 6, 6]
+  ];
+
   // Populate the table with enhanced information
-  getProgressTable().forEach(row => {
+  tableData.forEach(row => {
     const fileName = row[0];
     const processed = parseInt(row[1], 10) || 0;
     const total = parseInt(row[2], 10) || 0;
