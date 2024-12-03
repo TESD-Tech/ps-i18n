@@ -35,18 +35,30 @@ describe('Progress Table Utilities', () => {
     });
 
     it('should have specified column widths', () => {
-      expect(table.options.colWidths).to.deep.equal([35, 15, 15, 20, 15]);
+      expect(table.options.colWidths).to.deep.equal([35, 15, 10, 20, 14]);
     });
 
-    it('should have no vertical separators', () => {
-      const noSeparatorChars = [
-        'top-mid', 'bottom-mid', 
-        'left-mid', 'right-mid', 
-        'mid', 'mid-mid', 'middle'
-      ];
+    it('should have proper box-drawing characters for separators', () => {
+      const expectedChars = {
+        'top': '─',
+        'top-mid': '┬',
+        'top-left': '┌',
+        'top-right': '┐',
+        'bottom': '─',
+        'bottom-mid': '┴',
+        'bottom-left': '└',
+        'bottom-right': '┘',
+        'left': '│',
+        'left-mid': '├',
+        'mid': '─',
+        'mid-mid': '┼',
+        'right': '│',
+        'right-mid': '┤',
+        'middle': '│'
+      };
 
-      noSeparatorChars.forEach(char => {
-        expect(table.options.chars[char]).to.equal('');
+      Object.keys(expectedChars).forEach(char => {
+        expect(table.options.chars[char]).to.equal(expectedChars[char]);
       });
     });
   });
